@@ -1,8 +1,8 @@
 import requests
 #El comando para actualizar la hoja de incidencias ***python3 descargar_csv.py***#
 # Sustituye TU_ID_DE_HOJA por el ID real extraído de la URL de tu Google Sheets
-SHEET_ID = "TU_ID_DE_HOJA"
-url_csv = f"https://docs.google.com/spreadsheets/d/13k_wY1b8MiIIC0bMz8VGKAokrbbImtXmp7UYrDhnrHM/export?format=csv"
+SHEET_ID = "13k_wY1b8MiIIC0bMz8VGKAokrbbImtXmp7UYrDhnrHM"
+url_csv = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}export?format=csv"
 
 response = requests.get(url_csv)
 
