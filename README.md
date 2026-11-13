@@ -9,7 +9,9 @@
 > **TA04 – Group 07** · MDS (Programming and Markup Languages) · ASIX c1D
 > Authors: **Alexander Valyaev** & **Gabriel Ponzi**
  
-A small, end-to-end data pipeline that collects IT incident reports through **Google Forms**, exports them from **Google Sheets** as CSV, and transforms them into a clean, well-structured **XML** document.
+A small, end-to-end data pipeline that collects IT incident reports through **Google Forms**, exports them from **Google Sheets** as CSV, transforms them into a clean, well-structured **XML** document, analyses the data to turn it into meaningful **information**, and finally stores the results as **JSON**.
+ 
+The project works with the *big three* data-interchange formats — **CSV, XML and JSON** — which are open, documented, Unicode-based and widely used, making them a sustainable choice for long-term data storage and reuse.
  
 The project also includes a **synthetic data generator** that floods the forms with realistic (and deliberately *chaotic*) responses, so the conversion step can be stress-tested against multilingual text, unusual Unicode, encoded values and characters that commonly break CSV/XML parsers.
  
@@ -25,8 +27,13 @@ The project also includes a **synthetic data generator** that floods the forms w
   - [forms.py — Synthetic response generator](#1-formspy--synthetic-response-generator)
   - [descargar_csv.py — CSV downloader](#2-descargar_csvpy--csv-downloader)
   - [csv_to_xml.py — CSV to XML converter](#3-csv_to_xmlpy--csv-to-xml-converter)
+  - [Data processing & statistics](#4-data-processing--statistics)
+  - [JSON storage](#5-json-storage)
 - [Data Model](#-data-model)
+- [XML Tree Diagram](#-xml-tree-diagram)
 - [XML Output Example](#-xml-output-example)
+- [JSON Output Example](#-json-output-example)
+- [Project Stages](#-project-stages)
 - [Error Handling & Logging](#-error-handling--logging)
 - [Authors](#-authors)
 ---
@@ -40,12 +47,16 @@ flowchart LR
     B --> C[Google Sheets<br/>response sheet]
     C -->|descargar_csv.py<br/>CSV export| D[incidencies.csv]
     D -->|csv_to_xml.py| E[incidencies.xml]
+    E -->|processing script| F[Statistics<br/>in the terminal]
+    E -->|processing script| G[incidencies.json]
 ```
  
 1. **Collect** — Incidents are submitted to a Google Form, either by real users or automatically by `forms.py`.
 2. **Store** — Google Forms stores every response in a linked Google Sheet.
 3. **Export** — `descargar_csv.py` downloads the sheet as `incidencies.csv`.
 4. **Transform** — `csv_to_xml.py` parses the CSV and writes a pretty-printed `incidencies.xml`.
+5. **Analyse** — a Python console program reads the XML, filters out invalid data and shows formatted statistics.
+6. **Store** — the processed information is saved to `incidencies.json`, overwriting it or appending only new incidents.
 ---
  
 ## 📂 Repository Structure
@@ -57,6 +68,8 @@ flowchart LR
 | `csv_to_xml.py` | Converts `incidencies.csv` into a structured, indented `incidencies.xml`. |
 | `incidencies.csv` | Latest export of the incident responses (raw data). |
 | `incidencies.xml` | Generated XML document (≈1,250 incidents at the time of writing). |
+| `processar_incidencies.py` | Reads the XML, cleans the data, displays statistics and saves `incidencies.json`. |
+| `incidencies.json` | Processed incidents stored in JSON format. |
 | `.gitignore` | Excludes local artefacts such as `logform.log`. |
  
 ---
@@ -97,9 +110,12 @@ python3 descargar_csv.py
  
 # 5. Convert the CSV into XML
 python3 csv_to_xml.py
+ 
+# 6. Analyse the data and save it as JSON
+python3 processar_incidencies.py
 ```
  
-After step 5 you will find an up-to-date `incidencies.xml` in the project folder.
+After step 6 you will find an up-to-date `incidencies.xml` and `incidencies.json` in the project folder, and the statistics will have been printed to the terminal.
  
 ---
  
@@ -182,6 +198,43 @@ python3 csv_to_xml.py
 - **Pretty-prints** the result with two-space indentation and UTF-8 encoding.
 ---
  
+### 4. Data processing & statistics
+ 
+A Python console program reads `incidencies.xml` and turns raw **data** into useful **information**.
+ 
+**Data cleaning** — before computing anything, records that carry no useful information or are clearly wrong are filtered out, for example:
+ 
+- Dates that are impossible or out of range (e.g. an incident dated `0296` or `2064`).
+- Non-numeric or unrealistic values in numeric fields (e.g. `9999` affected users, values in binary/hex).
+- Empty, encoded or garbage text in key fields such as department or device type.
+**Statistics** — the cleaned data is summarised and printed with colours and aligned columns to make it easy to read, such as:
+ 
+- Incidents per department, device type and fault category.
+- Locations with the most incidents.
+- Total and average number of affected users.
+- Incidents per technician.
+- Number of valid vs. discarded records.
+---
+ 
+### 5. JSON storage
+ 
+The processed incidents are saved to **`incidencies.json`**. Before writing, the program checks whether the file already exists:
+ 
+| Situation | Behaviour |
+|-----------|-----------|
+| File does **not** exist | It is created with all the incidents. |
+| File exists → **Overwrite** | Previous content is deleted and all incidents are written again. |
+| File exists → **Append** | Existing incidents are kept and only **new** ones are added, avoiding duplicates (incidents with the same `id` are never repeated). |
+ 
+```text
+The file 'incidencies.json' already exists. What do you want to do?
+  [1] Overwrite it
+  [2] Append new incidents
+>
+```
+ 
+---
+ 
 ## 🗂️ Data Model
  
 Each incident in the dataset contains the following fields:
@@ -199,6 +252,26 @@ Each incident in the dataset contains the following fields:
 | `descripcio_de_la_incidencia` | Descripció de la incidència | Free-text description |
 | `usuaris_afectats` | Usuaris afectats | Number of affected users |
 | `contacte_del_tecnic_assignat` | Contacte del tècnic assignat | Assigned technician contact |
+ 
+---
+ 
+## 🌳 XML Tree Diagram
+ 
+```mermaid
+graph TD
+    R["incidencies (root)"] --> I["incidencia @id (1..n)"]
+    I --> A[marca_temporal]
+    I --> B[data_de_la_incidencia]
+    I --> C[usuari_afectat]
+    I --> D[departament]
+    I --> E[tipus_dequip]
+    I --> F[ubicacio]
+    I --> G[numero_dinventari]
+    I --> H[categoria_de_lavaria]
+    I --> J[descripcio_de_la_incidencia]
+    I --> K[usuaris_afectats]
+    I --> L[contacte_del_tecnic_assignat]
+```
  
 ---
  
@@ -223,6 +296,41 @@ Each incident in the dataset contains the following fields:
   <!-- ... -->
 </incidencies>
 ```
+ 
+---
+ 
+## 📄 JSON Output Example
+ 
+```json
+[
+  {
+    "id": "2",
+    "marca_temporal": "4/11/2026 9:27:38",
+    "data_de_la_incidencia": "4/11/2026",
+    "usuari_afectat": "Jo",
+    "departament": "Manteniment",
+    "tipus_dequip": "Impressora",
+    "ubicacio": "A2",
+    "numero_dinventari": "N1",
+    "categoria_de_lavaria": "No identificat",
+    "descripcio_de_la_incidencia": "...",
+    "usuaris_afectats": "...",
+    "contacte_del_tecnic_assignat": "..."
+  }
+]
+```
+ 
+---
+ 
+## ✅ Project Stages
+ 
+| Stage | Task | Status |
+|-------|------|--------|
+| F1 | Incident form + CSV data collection | ✅ Done |
+| F2 | CSV → XML conversion + XML tree diagram | ✅ Done |
+| F3 | Display formatted information + statistics | 🚧 In progress |
+| F4 | Create JSON + file existence checks | 🚧 In progress |
+| F5 | Delivery + presentation | ⏳ Pending |
  
 ---
  
