@@ -1,0 +1,1517 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Incidències informàtiques</title>
+<style>
+/* ══════════════════════════════════════════════════════════════════════════
+   SISTEMA DE DISSENY · Incidències
+   Fonament: Apple Human Interface Guidelines (color.md, typography.md,
+   layout.md, materials.md, sidebars.md, toolbars.md, charts.md).
+   Dues capes: CONTINGUT (opac, targetes agrupades) i FUNCIONAL (barra lateral
+   i barra d'eines flotants amb material de vidre). La identitat viu en el
+   contingut: el descodificador de dades i el text "en brut" en monoespai.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* Superfícies */
+  --bg: #f2f2f7;            /* fons agrupat */
+  --card: #ffffff;          /* targetes de contingut */
+  --fill: rgba(118,118,128,.12);   /* camps i controls */
+  --fill-2: rgba(118,118,128,.08);
+  --sep: rgba(60,60,67,.18);       /* separadors */
+  /* Text (contrast sobre --card): 16,8 · 5,1 */
+  --ink: #1d1d1f;
+  --ink-2: #6e6e73;
+  /* Accent = interactiu i marques de dades (7,2:1). Un sol significat. */
+  --accent: #2450b8;
+  --accent-bg: #e5ecfa;
+  --on-accent: #ffffff;
+  /* Senyals d'estat: text sobre el seu fons ≥ 4,7:1 */
+  --ok: #1b7a3a;  --ok-bg: #e3f3e7;
+  --fix: #9a5200; --fix-bg: #fbeedb;
+  --bad: #c42a1f; --bad-bg: #fde4e2;
+  /* Vidre (només capa funcional) */
+  --glass: rgba(250,250,252,.72);
+  --glass-edge: rgba(255,255,255,.65);
+  --glass-shadow: 0 8px 32px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.06);
+  --heat: 52%;
+  /* Tipografia: la del sistema per a la interfície; monoespai només per a dades en brut */
+  --sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI Variable Text", "Segoe UI", Ubuntu, Cantarell, "Noto Sans", system-ui, sans-serif;
+  --display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI Variable Display", "Segoe UI", Ubuntu, system-ui, sans-serif;
+  --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  /* Escala (text styles d'Apple adaptats a web): */
+  --t-large: 700 2.125rem/1.2 var(--display);   /* Large Title 34 */
+  --t-title2: 700 1.375rem/1.27 var(--display); /* Title 2 22 */
+  --t-headline: 600 1.0625rem/1.3 var(--sans);  /* Headline 17 */
+  --t-body: 400 1rem/1.45 var(--sans);          /* Body 16 */
+  --t-sub: 400 .9375rem/1.4 var(--sans);        /* Subheadline 15 */
+  --t-foot: 400 .8125rem/1.38 var(--sans);      /* Footnote 13 */
+  /* Forma: radis concèntrics */
+  --r-card: 18px; --r-ctl: 10px; --r-pill: 999px;
+  --side-w: 264px;
+  color-scheme: light;
+}
+/* Noms antics que fa servir el codi dels gràfics → tokens nous */
+:root { --blue: var(--accent); --green: var(--ok); --amber: var(--fix); --red: var(--bad); --violet: var(--accent);
+        --soft: var(--ink-2); --line: var(--sep); --paper: var(--bg); --heat-max: var(--heat); }
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #000000; --card: #1c1c1e;
+    --fill: rgba(118,118,128,.24); --fill-2: rgba(118,118,128,.16);
+    --sep: rgba(84,84,88,.6);
+    --ink: #f5f5f7; --ink-2: #a1a1a6;
+    --accent: #6e9bff; --accent-bg: #16264a; --on-accent: #0b1020;
+    --ok: #4cd471; --ok-bg: #11301b;
+    --fix: #ffad42; --fix-bg: #3a2810;
+    --bad: #ff6b5e; --bad-bg: #3d1513;
+    --glass: rgba(30,30,32,.68); --glass-edge: rgba(255,255,255,.1);
+    --glass-shadow: 0 8px 32px rgba(0,0,0,.5), 0 0 0 .5px rgba(255,255,255,.08);
+    --heat: 48%;
+    color-scheme: dark;
+  }
+}
+@media (prefers-contrast: more) {
+  :root { --ink-2: #48484d; --sep: rgba(60,60,67,.45); --glass: rgba(250,250,252,.97); }
+}
+@media (prefers-contrast: more) and (prefers-color-scheme: dark) {
+  :root { --ink-2: #d1d1d6; --sep: rgba(200,200,210,.45); --glass: rgba(28,28,30,.98); }
+}
+/* Reduir transparència: el vidre passa a opac (liquid-glass.md › Review checklist 5) */
+@media (prefers-reduced-transparency: reduce) {
+  :root { --glass: var(--card); }
+  .glass { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { -webkit-text-size-adjust: 100%; scroll-padding-top: 84px; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: var(--t-body); font-feature-settings: "tnum" 0; }
+.num, .v, td.n, .kpis .num { font-variant-numeric: tabular-nums; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
+a { color: var(--accent); }
+button { font: inherit; color: inherit; }
+
+/* ───────── Capa funcional: vidre ───────── */
+.glass {
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(28px) saturate(1.4);
+  backdrop-filter: blur(28px) saturate(1.4);
+  border: .5px solid var(--glass-edge);
+  box-shadow: var(--glass-shadow);
+}
+
+/* ───────── Estructura: barra lateral + contingut ───────── */
+.app { display: grid; grid-template-columns: var(--side-w) minmax(0, 1fr); min-height: 100vh; }
+.sidebar {
+  position: sticky; top: 0; height: 100vh; padding: 10px 0 10px 10px; z-index: 6;
+}
+.sidebar-inner { height: 100%; border-radius: 22px; padding: 14px 10px; display: flex; flex-direction: column; gap: 4px; overflow-y: auto; }
+.side-head { padding: 6px 10px 14px; }
+.side-head .app-name { font: var(--t-headline); margin: 0; }
+.side-head .app-sub { font: var(--t-foot); color: var(--ink-2); margin: 2px 0 0; }
+.side-group { font: 600 .8125rem/1.3 var(--sans); color: var(--ink-2); padding: 14px 10px 4px; margin: 0; }
+nav.tabs { display: flex; flex-direction: column; gap: 2px; }
+nav.tabs a {
+  display: flex; align-items: center; gap: 10px; min-height: 36px; padding: 7px 10px; border-radius: var(--r-ctl);
+  color: var(--ink); text-decoration: none; font: var(--t-sub);
+}
+nav.tabs a svg { width: 20px; height: 20px; flex: none; color: var(--accent); }
+nav.tabs a:hover { background: var(--fill-2); }
+nav.tabs a[aria-current="page"] { background: var(--accent); color: var(--on-accent); font-weight: 600; }
+nav.tabs a[aria-current="page"] svg { color: var(--on-accent); }
+nav.tabs a .chev { margin-left: auto; color: var(--ink-2); display: none; }
+.side-stats { margin-top: 6px; padding: 8px 10px; font: var(--t-foot); color: var(--ink-2); }
+.side-stats b { color: var(--ink); font-weight: 600; }
+
+.main { min-width: 0; padding: 0 28px 64px; }
+
+/* Barra d'eines flotant */
+.toolbar {
+  position: sticky; top: 10px; z-index: 5; margin: 10px 0 0;
+  display: flex; align-items: center; gap: 10px; padding: 7px; border-radius: 999px;
+}
+.toolbar .grow { flex: 1; }
+.tb-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-width: 36px; min-height: 36px;
+  padding: 0 12px; border: 0; border-radius: var(--r-pill); background: transparent; cursor: pointer; color: var(--ink);
+}
+.tb-btn:hover { background: var(--fill-2); }
+.tb-btn svg { width: 19px; height: 19px; color: var(--ink); }
+.tb-btn .badge { min-width: 20px; height: 20px; padding: 0 6px; border-radius: 99px; background: var(--accent); color: var(--on-accent); font: 600 .75rem/20px var(--sans); }
+#back { display: none; }
+.search {
+  display: flex; align-items: center; gap: 6px; background: var(--fill); border-radius: var(--r-pill); padding: 0 12px;
+  min-height: 36px; width: min(340px, 34vw);
+}
+.search svg { width: 17px; height: 17px; color: var(--ink-2); flex: none; }
+.search input { all: unset; flex: 1; min-width: 0; font: var(--t-sub); color: var(--ink); }
+.search input::placeholder { color: var(--ink-2); }
+.seg { display: inline-flex; padding: 2px; background: var(--fill); border-radius: var(--r-pill); }
+.seg button { border: 0; background: transparent; border-radius: var(--r-pill); padding: 0 12px; min-height: 32px; cursor: pointer; font: 500 .875rem/1 var(--sans); color: var(--ink); white-space: nowrap; }
+.seg button[aria-pressed="true"] { background: var(--card); box-shadow: 0 1px 3px rgba(0,0,0,.14), 0 0 0 .5px rgba(0,0,0,.04); font-weight: 600; }
+@media (prefers-color-scheme: dark) { .seg button[aria-pressed="true"] { background: #636366; } }
+
+/* Capçalera de secció: títol gran */
+.view-head { padding: 26px 4px 4px; }
+.view-head h1 { font: var(--t-large); letter-spacing: -.02em; margin: 0; }
+.view-head p { font: var(--t-sub); color: var(--ink-2); margin: 4px 0 0; max-width: 70ch; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 12px 4px 0; min-height: 30px; font: var(--t-foot); color: var(--ink-2); }
+.chip { display: inline-flex; align-items: center; gap: 2px; background: var(--accent-bg); color: var(--accent); border-radius: var(--r-pill); padding: 2px 2px 2px 12px; font: 500 .8125rem/1 var(--sans); }
+.chip button { border: 0; background: transparent; color: inherit; cursor: pointer; min-width: 28px; min-height: 28px; border-radius: 99px; font-weight: 700; }
+.chip button:hover { background: color-mix(in srgb, var(--accent) 16%, transparent); }
+
+/* ───────── Capa de contingut ───────── */
+section.view { display: none; }
+section.view.on { display: block; }
+.grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 16px; margin-top: 16px; }
+.grid > .panel { grid-column: span 3; }
+.grid > .panel.third { grid-column: span 2; }
+@media (max-width: 1180px) { .grid > .panel.third { grid-column: span 3; } }
+@media (max-width: 980px) { .grid > .panel, .grid > .panel.third { grid-column: 1 / -1; } }
+.panel { background: var(--card); border-radius: var(--r-card); padding: 18px 20px 20px; min-width: 0; }
+.panel h2 { font: var(--t-headline); margin: 0 0 2px; }
+.panel .hint { font: var(--t-foot); color: var(--ink-2); margin: 0 0 12px; max-width: 70ch; }
+.grid > .panel.wide, .wide { grid-column: 1 / -1; }
+.headline { font: var(--t-sub); margin: 2px 0 14px; max-width: 70ch; color: var(--ink); }
+.headline b { font-weight: 600; }
+
+/* Peça característica: el descodificador */
+.decoder { padding: 0; overflow: hidden; display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); }
+.dec-l { padding: 24px 24px 22px; }
+.dec-r { padding: 24px; border-left: .5px solid var(--sep); display: flex; flex-direction: column; justify-content: space-between; gap: 16px; }
+.dec-kicker { font: var(--t-foot); color: var(--ink-2); margin: 0 0 14px; }
+.dec-raw { font: 400 .95rem/1.5 var(--mono); color: var(--ink-2); word-break: break-all; min-height: 3em; margin: 0; padding: 12px 14px; background: var(--fill-2); border-radius: 12px;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.dec-arrow { display: flex; align-items: center; gap: 10px; margin: 12px 0; font: var(--t-foot); color: var(--fix); }
+.dec-arrow svg { width: 18px; height: 18px; }
+.dec-arrow .tag { margin: 0; }
+.dec-clean { font: 700 1.75rem/1.2 var(--display); letter-spacing: -.015em; margin: 0; min-height: 1.2em; overflow-wrap: anywhere; }
+.dec-meta { font: var(--t-foot); color: var(--ink-2); margin: 8px 0 0; }
+.dec-nav { display: flex; gap: 6px; margin-top: 16px; align-items: center; }
+.dec-nav .count { font: var(--t-foot); color: var(--ink-2); margin-left: 6px; }
+.round { width: 36px; height: 36px; border-radius: 50%; border: 0; background: var(--fill); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; color: var(--ink); }
+.round:hover { background: var(--sep); }
+.round svg { width: 16px; height: 16px; }
+@keyframes decode { from { opacity: 0; transform: translateY(6px); filter: blur(4px); } to { opacity: 1; transform: none; filter: none; } }
+@media (prefers-reduced-motion: no-preference) { .dec-clean.anim { animation: decode .55s cubic-bezier(.2,.8,.2,1) both; } }
+.pipe-total { font: 700 2.75rem/1 var(--display); letter-spacing: -.03em; margin: 0; }
+.pipe-label { font: var(--t-sub); color: var(--ink-2); margin: 4px 0 0; }
+.pipe-bar { display: flex; height: 14px; border-radius: 7px; overflow: hidden; gap: 2px; background: var(--card); }
+.pipe-bar i { display: block; height: 100%; }
+.pipe-legend { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; font: var(--t-sub); }
+.pipe-legend li { display: grid; grid-template-columns: 12px 1fr auto; gap: 10px; align-items: center; }
+.pipe-legend li i { width: 12px; height: 12px; border-radius: 3px; }
+.pipe-legend .num { font-weight: 600; }
+
+/* KPI */
+.kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px; }
+@media (max-width: 700px) { .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.kpis div { display: flex; flex-direction: column; gap: 2px; padding-left: 12px; border-left: 2px solid var(--fill); }
+.kpis .num { font: 700 1.75rem/1.1 var(--display); letter-spacing: -.02em; }
+.kpis span:not(.num) { font: var(--t-foot); color: var(--ink-2); }
+ul.insights { margin: 0; padding: 0; list-style: none; display: grid; gap: 0; }
+ul.insights li { padding: 11px 0 11px 22px; border-top: .5px solid var(--sep); position: relative; font: var(--t-sub); max-width: 85ch; }
+ul.insights li:first-child { border-top: 0; }
+ul.insights li::before { content: ""; position: absolute; left: 4px; top: 18px; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
+
+/* Barres */
+.bars { display: grid; grid-template-columns: minmax(90px, 36%) 1fr auto; gap: 7px 12px; align-items: center; font: var(--t-sub); }
+.bars .k { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bars button.k { border: 0; background: none; padding: 2px 0; text-align: left; cursor: pointer; color: var(--ink); font: inherit; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bars button.k:hover { color: var(--accent); }
+.bar { height: 12px; border-radius: 6px; background: var(--accent); min-width: 3px; }
+.v { color: var(--ink-2); text-align: right; white-space: nowrap; font: var(--t-foot); font-variant-numeric: tabular-nums; }
+.cols { display: flex; align-items: end; gap: 6px; height: 176px; padding-top: 8px; }
+.cols div { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: end; height: 100%; font: .75rem/1.3 var(--sans); color: var(--ink-2); min-width: 0; gap: 3px; }
+.cols i { display: block; width: 100%; max-width: 44px; background: var(--accent); border-radius: 6px 6px 2px 2px; min-height: 2px; }
+.cols b { color: var(--ink); font-weight: 500; font-variant-numeric: tabular-nums; }
+
+/* Taules */
+.scroll { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font: var(--t-sub); }
+th, td { text-align: left; padding: 9px 10px; border-bottom: .5px solid var(--sep); vertical-align: top; }
+th { font: 600 .8125rem/1.3 var(--sans); color: var(--ink-2); white-space: nowrap; }
+td.n, th.n { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+tbody tr:last-child td { border-bottom: 0; }
+table.dist td:first-child { white-space: nowrap; }
+table.dist tbody tr, .explore tbody tr { cursor: pointer; }
+table.dist tbody tr:hover, .explore tbody tr:hover { background: var(--fill-2); }
+.minibar { height: 8px; border-radius: 4px; background: var(--accent); }
+table.heat td, table.heat th { text-align: center; padding: 7px 8px; font-variant-numeric: tabular-nums; border-bottom: 0; }
+table.heat td { border: 2px solid var(--card); border-radius: 6px; }
+table.heat th:first-child, table.heat td:first-child { text-align: left; white-space: nowrap; }
+table.heat td.tot, table.heat th.tot { font-weight: 600; color: var(--ink-2); }
+svg text { fill: var(--ink-2); font: 12px var(--sans); }
+svg .grid-l { stroke: var(--sep); }
+svg .scrub { stroke: var(--ink); stroke-width: 1; }
+.readout { min-height: 1.5em; font: var(--t-foot); color: var(--ink-2); margin-bottom: 4px; font-variant-numeric: tabular-nums; }
+.readout b { color: var(--ink); font-weight: 600; }
+.legend { display: flex; gap: 16px; font: var(--t-foot); color: var(--ink-2); margin-top: 8px; }
+.legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: -1px; margin-right: 6px; }
+
+/* Exemples del descodificador a Qualitat */
+.example { display: grid; grid-template-columns: 12em 1fr; gap: 4px 14px; padding: 12px 0; border-top: .5px solid var(--sep); font: var(--t-sub); }
+.example:first-child { border-top: 0; }
+.example code { font: .8125rem/1.45 var(--mono); color: var(--ink-2); word-break: break-all; }
+
+/* Etiquetes d'estat */
+.tag { display: inline-block; font: 600 .75rem/1.5 var(--sans); padding: 1px 8px; border-radius: var(--r-pill); margin: 1px 3px 1px 0; white-space: nowrap; }
+.t-ok { background: var(--ok-bg); color: var(--ok); }
+.t-fix { background: var(--fix-bg); color: var(--fix); }
+.t-bad { background: var(--bad-bg); color: var(--bad); }
+.t-info { background: var(--accent-bg); color: var(--accent); }
+
+/* Controls genèrics */
+.btn { font: 500 .875rem/1 var(--sans); border: 0; background: var(--fill); color: var(--ink); padding: 0 14px; min-height: 34px; border-radius: var(--r-pill); cursor: pointer; }
+.btn:hover { background: var(--sep); }
+.btn:disabled { opacity: .35; cursor: default; }
+.btn.prominent { background: var(--accent); color: var(--on-accent); font-weight: 600; }
+select.btn { appearance: none; -webkit-appearance: none; padding-right: 30px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M3 4.5 6 7.5 9 4.5' fill='none' stroke='%238e8e93' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 10px center; background-size: 12px; }
+.bar-top { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 12px; font: var(--t-sub); }
+.bar-top label { display: inline-flex; gap: 8px; align-items: center; color: var(--ink-2); }
+.spacer { flex: 1; }
+.pager { display: flex; gap: 10px; align-items: center; justify-content: flex-end; padding: 14px 0 0; font: var(--t-foot); color: var(--ink-2); }
+.empty { padding: 36px; text-align: center; color: var(--ink-2); }
+.explore td.desc { max-width: 44ch; }
+.explore td:nth-child(2) { white-space: nowrap; }
+.explore th button { border: 0; background: none; padding: 0; cursor: pointer; font: inherit; color: inherit; }
+input[type=checkbox] { width: 18px; height: 18px; accent-color: var(--accent); }
+
+/* ───────── Full de filtres (popover ample / full inferior compacte) ───────── */
+dialog { color: var(--ink); }
+#filters { position: fixed; inset: 70px 28px auto auto; margin: 0; width: min(440px, 92vw); max-height: calc(100vh - 90px); overflow: auto;
+  border-radius: 22px; padding: 0; }
+#filters::backdrop { background: transparent; }
+.sheet-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px 8px 20px; position: sticky; top: 0; }
+.sheet-head h2 { font: var(--t-headline); margin: 0; }
+.grabber { display: none; width: 36px; height: 5px; border-radius: 3px; background: var(--sep); margin: 8px auto 0; }
+.form { padding: 4px 16px 18px; display: grid; gap: 16px; }
+.group { background: var(--card); border-radius: 14px; overflow: hidden; }
+.group label { display: grid; grid-template-columns: minmax(110px, 40%) 1fr; align-items: center; gap: 10px; padding: 0 14px; min-height: 46px; border-bottom: .5px solid var(--sep); font: var(--t-sub); }
+.group label:last-child { border-bottom: 0; }
+.group select, .group input { font: var(--t-sub); color: var(--accent); background: transparent; border: 0; text-align: right; min-width: 0; padding: 10px 0; width: 100%; }
+.group select { text-align-last: right; }
+.group input[type=number] { color: var(--ink); }
+.form .foot { display: flex; justify-content: space-between; gap: 10px; }
+#menu { position: fixed; inset: 70px 28px auto auto; margin: 0; width: 280px; border-radius: 18px; padding: 8px; }
+#menu::backdrop { background: transparent; }
+.menu-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 10px; font: var(--t-sub); }
+.menu-item { display: flex; width: 100%; align-items: center; gap: 10px; border: 0; background: transparent; padding: 11px 10px; border-radius: 10px; cursor: pointer; font: var(--t-sub); color: var(--ink); text-align: left; }
+.menu-item:hover { background: var(--fill-2); }
+.menu-item svg { width: 18px; height: 18px; }
+.menu-sep { height: .5px; background: var(--sep); margin: 4px 8px; }
+
+/* Detall */
+#detail { border: 0; border-radius: 22px; padding: 0; background: var(--bg); width: min(880px, 94vw); max-height: 88vh; box-shadow: 0 30px 80px rgba(0,0,0,.3); }
+#detail::backdrop { background: rgba(0,0,0,.35); }
+.dhead { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 12px 16px 12px 22px; position: sticky; top: 0; z-index: 1; }
+.dhead h2 { margin: 0; font: var(--t-headline); }
+.dhead .actions { display: flex; gap: 6px; }
+.dbody { padding: 6px 18px 22px; }
+.dbody > table { background: var(--card); border-radius: 14px; overflow: hidden; }
+.dbody table td:first-child { color: var(--ink-2); white-space: nowrap; width: 1%; }
+.orig { font: .78rem/1.45 var(--mono); color: var(--ink-2); word-break: break-all; margin-top: 4px; }
+.msg { margin: 6px 0 12px; padding: 12px 14px; border-radius: 12px; font: var(--t-sub); }
+
+/* ───────── Mida compacta: la barra lateral es converteix en la llista arrel (com a iPhone) ───────── */
+
+/* ───────── Textura: les dades en brut sota el vidre ─────────
+   sidebars.md: "Extend visually rich content beneath the sidebar". El vidre necessita
+   alguna cosa a sota; aquí són els codis reals que han arribat del formulari. */
+.backdrop {
+  position: fixed; inset: 0 0 auto 0; height: 430px; z-index: 0; overflow: hidden; pointer-events: none;
+  font: 500 13px/1.75 var(--mono); color: var(--accent); opacity: .16; white-space: pre-wrap; word-break: break-all;
+  padding: 18px 24px; letter-spacing: .02em;
+  /* Densa a la part superior (on hi ha el vidre), s'esvaeix cap avall i darrere del títol */
+  -webkit-mask-image: linear-gradient(to bottom, #000 0, #000 64px, rgba(0,0,0,.35) 120px, rgba(0,0,0,.18) 260px, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 0, #000 64px, rgba(0,0,0,.35) 120px, rgba(0,0,0,.18) 260px, transparent 100%);
+}
+@media (prefers-color-scheme: dark) { .backdrop { opacity: .22; } }
+@media (prefers-contrast: more) { .backdrop { display: none; } }
+.app { position: relative; z-index: 1; }
+#filters, #menu { z-index: 20; }   /* els popovers no modals han de quedar per sobre del contingut */
+
+/* Barra lateral: selecció tranquil·la, icona en color d'accent */
+nav.tabs a[aria-current="page"] { background: var(--accent-bg); color: var(--ink); font-weight: 600; }
+nav.tabs a[aria-current="page"] svg { color: var(--accent); }
+.side-head { display: flex; gap: 10px; align-items: flex-start; }
+.app-mark { width: 34px; height: 34px; flex: none; border-radius: 9px; background: var(--accent); color: var(--on-accent);
+  display: grid; place-items: center; font: 700 13px/1 var(--mono); letter-spacing: -.04em; }
+
+/* Targetes: definició subtil */
+.panel { box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 6px 24px rgba(0,0,0,.04); }
+@media (prefers-color-scheme: dark) { .panel { box-shadow: inset 0 0 0 .5px rgba(255,255,255,.07); } }
+
+/* Barres amb carril: s'hi llegeix la proporció respecte al màxim */
+.bars > div:not(.bar) { background: var(--fill-2); border-radius: 6px; }
+.minibar { box-shadow: none; }
+td .minibar { position: relative; }
+
+@media (max-width: 860px) {
+  .app { grid-template-columns: 1fr; }
+  .sidebar { position: static; height: auto; padding: 0; }
+  .sidebar-inner { border-radius: 0; background: transparent; box-shadow: none; border: 0; -webkit-backdrop-filter: none; backdrop-filter: none; padding: 20px 16px; }
+  .side-head .app-name { font: var(--t-large); letter-spacing: -.02em; }
+  nav.tabs { background: var(--card); border-radius: 14px; overflow: hidden; gap: 0; }
+  nav.tabs a { border-radius: 0; min-height: 50px; border-bottom: .5px solid var(--sep); font: var(--t-body); }
+  nav.tabs a:last-child { border-bottom: 0; }
+  nav.tabs a[aria-current="page"] { background: transparent; color: var(--ink); font-weight: 400; }
+  nav.tabs a[aria-current="page"] svg { color: var(--accent); }
+  nav.tabs a .chev { display: block; }
+  body.in-view .sidebar { display: none; }
+  body:not(.in-view) .main { display: none; }
+  .main { padding: 0 12px 48px; }
+  #back { display: inline-flex; padding: 0 6px; }
+  #back span, #open-filters > span:not(.badge) { display: none; }
+  .toolbar { gap: 4px; top: 8px; margin-top: 8px; }
+  .search { width: auto; flex: 1; min-width: 0; }
+  .toolbar .grow { display: none; }
+  .toolbar .seg { display: none; }
+  .metric-compact { display: flex !important; }
+  .decoder { grid-template-columns: 1fr; }
+  .dec-r { border-left: 0; border-top: .5px solid var(--sep); }
+  .grid { grid-template-columns: 1fr; }
+  #filters { inset: auto 0 0 0; width: 100%; max-height: 88vh; border-radius: 22px 22px 0 0; }
+  #filters::backdrop { background: rgba(0,0,0,.3); }
+  .grabber { display: block; }
+  #menu { inset: 64px 12px auto auto; }
+}
+.metric-compact { display: none; justify-content: center; margin: 14px 0 0; }
+@media (pointer: coarse) {
+  .tb-btn, .round, .btn, .seg button { min-height: 44px; min-width: 44px; }
+  .chip button { min-width: 44px; min-height: 44px; }
+  nav.tabs a { min-height: 50px; }
+  .bars button.k { min-height: 32px; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .bar, .cols i, .minibar { transition: width .25s ease, height .25s ease; }
+  nav.tabs a, .tb-btn, .btn { transition: background-color .15s ease; }
+}
+@media print {
+  .backdrop,
+  .sidebar, .toolbar, .chips, .pager, .bar-top, .dec-nav { display: none !important; }
+  .app { display: block; }
+  section.view { display: block !important; break-before: page; }
+  body { background: #fff; }
+  .panel { border: 1px solid #ddd; }
+}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-resum" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="7" height="7" rx="2"/><rect x="13.5" y="3.5" width="7" height="7" rx="2"/><rect x="3.5" y="13.5" width="7" height="7" rx="2"/><rect x="13.5" y="13.5" width="7" height="7" rx="2"/></g></symbol>
+    <symbol id="i-distribucio" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 6h14M4 12h9M4 18h16"/></g></symbol>
+    <symbol id="i-temporal" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 17l5-6 4 3.5 5-7 3 3.5"/><path d="M3.5 20.5h17"/></g></symbol>
+    <symbol id="i-creuaments" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3.5" y="3.5" width="17" height="17" rx="3"/><path d="M3.5 9.5h17M3.5 15h17M9.5 3.5v17M15 3.5v17"/></g></symbol>
+    <symbol id="i-llocs" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.4"/></g></symbol>
+    <symbol id="i-qualitat" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7l-4 5 4 5M17 7l4 5-4 5M14 4.5l-4 15"/></g></symbol>
+    <symbol id="i-explorador" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 6.5h16M4 12h16M4 17.5h16"/><circle cx="4" cy="6.5" r=".4"/></g></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5l5 5"/></g></symbol>
+    <symbol id="i-filter" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M4 7h16M7 12h10M10 17h4"/></g></symbol>
+    <symbol id="i-more" viewBox="0 0 24 24"><g fill="currentColor"><circle cx="6" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="18" cy="12" r="1.7"/></g></symbol>
+    <symbol id="i-back" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-next" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></symbol>
+    <symbol id="i-down" viewBox="0 0 24 24"><path d="M12 5v13M6.5 12.5 12 18l5.5-5.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-print" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M7 9V3.5h10V9"/><rect x="3.5" y="9" width="17" height="8" rx="2"/><path d="M7 14.5h10v6H7z"/></g></symbol>
+  </defs>
+</svg>
+
+<div class="backdrop" id="backdrop" aria-hidden="true"></div>
+<div class="app">
+  <aside class="sidebar">
+    <div class="sidebar-inner glass">
+      <div class="side-head">
+        <span class="app-mark" aria-hidden="true">01</span>
+        <div><p class="app-name" data-i="title"></p>
+        <p class="app-sub" data-i="appSub"></p></div>
+      </div>
+      <nav class="tabs" id="tabs" aria-label="Seccions"></nav>
+      <p class="side-stats" id="side-stats"></p>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="toolbar glass">
+      <button type="button" class="tb-btn" id="back"><svg aria-hidden="true"><use href="#i-back"/></svg><span data-i="sections"></span></button>
+      <label class="search"><svg aria-hidden="true"><use href="#i-search"/></svg><input type="search" id="q" autocomplete="off"></label>
+      <span class="grow"></span>
+      <span class="seg" role="group" id="metric-seg"><button type="button" data-metric="n" data-i="m_n"></button><button type="button" data-metric="u" data-i="m_u"></button></span>
+      <button type="button" class="tb-btn" id="open-filters" aria-haspopup="dialog"><svg aria-hidden="true"><use href="#i-filter"/></svg><span data-i="filtersBtn"></span><span class="badge" id="fcount" hidden></span></button>
+      <button type="button" class="tb-btn" id="open-menu" aria-haspopup="dialog"><svg aria-hidden="true"><use href="#i-more"/></svg></button>
+    </header>
+
+    <div class="view-head">
+      <h1 id="view-title"></h1>
+      <p id="view-sub"></p>
+      <div class="metric-compact"><span class="seg" role="group"><button type="button" data-metric="n" data-i="m_n"></button><button type="button" data-metric="u" data-i="m_u"></button></span></div>
+    </div>
+    <div class="chips" id="chips" aria-live="polite"></div>
+
+  <!-- RESUM -->
+
+  <section class="view" id="v-resum">
+    <div class="grid">
+      <div class="panel wide decoder">
+        <div class="dec-l">
+          <p class="dec-kicker" id="dec-kicker"></p>
+          <p class="dec-raw" id="dec-raw"></p>
+          <div class="dec-arrow"><svg aria-hidden="true"><use href="#i-down"/></svg><span class="tag t-fix" id="dec-trick"></span></div>
+          <p class="dec-clean" id="dec-clean" aria-live="polite"></p>
+          <p class="dec-meta" id="dec-meta"></p>
+          <div class="dec-nav"><button class="round" id="dec-prev"><svg aria-hidden="true"><use href="#i-back"/></svg></button><button class="round" id="dec-next"><svg aria-hidden="true"><use href="#i-next"/></svg></button><span class="count" id="dec-count"></span></div>
+        </div>
+        <div class="dec-r">
+          <div><p class="pipe-total num" id="n-total"></p><p class="pipe-label" data-i="read"></p></div>
+          <div class="pipe-bar" id="pipe-bar" role="img"></div>
+          <ul class="pipe-legend">
+            <li><i style="background:var(--ok)"></i><span data-i="pClean"></span><span class="num" id="n-clean"></span></li>
+            <li><i style="background:var(--fix)"></i><span data-i="pFixed"></span><span class="num" id="n-fixok"></span></li>
+            <li><i style="background:var(--bad)"></i><span data-i="discarded"></span><span class="num" id="n-bad"></span></li>
+          </ul>
+        </div>
+      </div>
+      <div class="panel wide"><h2 data-i="kpiTitle"></h2><p class="hint" data-i="kpiHint"></p><div class="kpis" id="kpis"></div></div>
+      <div class="panel wide"><h2 data-i="insTitle"></h2><p class="hint" data-i="insHint"></p><ul class="insights" id="insights"></ul></div>
+      <div class="panel"><h2 data-i="byCat"></h2><div class="bars" id="r-cat"></div></div>
+      <div class="panel"><h2 data-i="byDept"></h2><div class="bars" id="r-dept"></div></div>
+      <div class="panel wide"><h2 data-i="byProb"></h2><p class="hint" data-i="byProbHint"></p><div class="bars" id="r-prob"></div></div>
+    </div>
+  </section>
+
+  <!-- DISTRIBUCIÓ -->
+  <section class="view" id="v-distribucio">
+    <div class="grid">
+      <div class="panel wide"><h2 data-i="byCat"></h2><p class="hint" data-i="distHint"></p><div class="scroll" id="d-cat"></div></div>
+      <div class="panel wide"><h2 data-i="byEquip"></h2><div class="scroll" id="d-equip"></div></div>
+      <div class="panel wide"><h2 data-i="byDept"></h2><div class="scroll" id="d-dept"></div></div>
+      <div class="panel wide"><h2 data-i="byProb"></h2><p class="hint" data-i="byProbHint"></p><div class="scroll" id="d-prob"></div></div>
+      <div class="panel wide"><h2 data-i="pareto"></h2><p class="hint" data-i="paretoHint"></p><div class="scroll" id="d-pareto"></div></div>
+      <div class="panel"><h2 data-i="usersHist"></h2><p class="hint" data-i="usersHistHint"></p><div class="cols" id="d-uhist"></div></div>
+      <div class="panel"><h2 data-i="severity"></h2><p class="hint" data-i="severityHint"></p><div class="bars" id="d-sev"></div></div>
+    </div>
+  </section>
+
+  <!-- TEMPORAL -->
+  <section class="view" id="v-temporal">
+    <div class="grid">
+      <div class="panel wide"><h2 data-i="timeline"></h2><p class="hint" data-i="timelineHint"></p>
+        <div class="seg" role="group" id="gran" style="margin-bottom:8px"><button type="button" data-g="d" data-i="g_d"></button><button type="button" data-g="w" data-i="g_w"></button><button type="button" data-g="m" data-i="g_m"></button></div>
+        <div class="scroll" id="t-line"></div></div>
+      <div class="panel"><h2 data-i="byMonth"></h2><div class="cols" id="t-month"></div></div>
+      <div class="panel"><h2 data-i="byWeekday"></h2><div class="cols" id="t-wd"></div></div>
+      <div class="panel wide"><h2 data-i="heatWM"></h2><p class="hint" data-i="heatHint"></p><div class="scroll" id="t-heat"></div></div>
+      <div class="panel"><h2 data-i="byHour"></h2><p class="hint" data-i="byHourHint"></p><div class="cols" id="t-hour"></div></div>
+      <div class="panel"><h2 data-i="delay"></h2><p class="hint" data-i="delayHint"></p><div class="bars" id="t-delay"></div></div>
+    </div>
+  </section>
+
+  <!-- CREUAMENTS -->
+  <section class="view" id="v-creuaments">
+    <div class="grid">
+      <div class="panel wide"><h2 data-i="crossTitle"></h2><p class="hint" data-i="crossHint"></p>
+        <div class="bar-top">
+          <label><span data-i="rows"></span> <select id="x-row" class="btn"></select></label>
+          <label><span data-i="cols"></span> <select id="x-col" class="btn"></select></label>
+          <span class="seg" role="group" id="x-mode"><button type="button" data-x="abs" data-i="x_abs"></button><button type="button" data-x="row" data-i="x_row"></button><button type="button" data-x="col" data-i="x_col"></button></span>
+        </div>
+        <div class="scroll" id="x-table"></div></div>
+    </div>
+  </section>
+
+  <!-- LLOCS I EQUIPS -->
+  <section class="view" id="v-llocs">
+    <div class="grid">
+      <div class="panel third"><h2 data-i="byFloor"></h2><div class="cols" id="l-floor"></div></div>
+      <div class="panel third"><h2 data-i="bySpace"></h2><p class="hint" data-i="bySpaceHint"></p><div class="bars" id="l-space"></div></div>
+      <div class="panel third"><h2 data-i="topLoc"></h2><div class="bars" id="l-top"></div></div>
+      <div class="panel wide"><h2 data-i="repeat"></h2><p class="hint" data-i="repeatHint"></p><div class="scroll" id="l-rep"></div></div>
+      <div class="panel wide"><h2 data-i="tech"></h2><div id="l-tech"></div></div>
+    </div>
+  </section>
+
+  <!-- QUALITAT -->
+  <section class="view" id="v-qualitat">
+    <div class="grid">
+      <div class="panel wide"><h2 data-i="dataVsInfo"></h2><p class="hint" data-i="dataVsInfoText"></p><div class="kpis" id="q-kpis"></div></div>
+      <div class="panel"><h2 data-i="tricks"></h2><div class="bars" id="q-tricks"></div></div>
+      <div class="panel"><h2 data-i="fieldsCorrupt"></h2><p class="hint" data-i="fieldsCorruptHint"></p><div class="bars" id="q-fields"></div></div>
+      <div class="panel wide"><h2 data-i="trickMatrix"></h2><p class="hint" data-i="trickMatrixHint"></p><div class="scroll" id="q-matrix"></div></div>
+      <div class="panel third"><h2 data-i="reasons"></h2><div class="bars" id="q-reasons"></div></div>
+      <div class="panel third"><h2 data-i="warnings"></h2><div class="bars" id="q-warn"></div></div>
+      <div class="panel third"><h2 data-i="byLang"></h2><div class="bars" id="q-lang"></div></div>
+      <div class="panel wide"><h2 data-i="examples"></h2><p class="hint" data-i="examplesHint"></p><div id="q-examples"></div></div>
+      <div class="panel wide"><h2 data-i="discList"></h2><div class="scroll" id="q-disc"></div></div>
+    </div>
+  </section>
+
+  <!-- EXPLORADOR -->
+  <section class="view" id="v-explorador">
+    <div class="panel" style="margin-top:16px">
+      <div class="bar-top">
+        <span id="count"></span><span class="spacer"></span>
+        <label><input type="checkbox" id="tr"> <span data-i="trToggle"></span></label>
+        <label><span data-i="perPage"></span> <select id="pp" class="btn"><option>25</option><option>50</option><option>100</option><option>250</option></select></label>
+        <button class="btn" id="exp-csv" data-i="expCsv"></button>
+        <button class="btn" id="exp-json" data-i="expJson"></button>
+      </div>
+      <div class="scroll">
+        <table class="explore"><thead><tr id="ex-head"></tr></thead><tbody id="rows"></tbody></table>
+      </div>
+      <div class="pager"><button class="btn" id="prev" data-i="prev"></button><span id="page"></span><button class="btn" id="next" data-i="next"></button></div>
+    </div>
+  </section>
+</div>
+</div>
+
+<dialog id="filters" class="glass" aria-labelledby="f-title">
+  <div class="grabber" aria-hidden="true"></div>
+  <div class="sheet-head"><h2 id="f-title" data-i="filtersBtn"></h2><button type="button" class="btn prominent" id="f-done" data-i="done"></button></div>
+  <form class="form" onsubmit="return false">
+    <div class="group">
+      <label><span data-i="status"></span><select id="f-status"></select></label>
+    </div>
+    <div class="group">
+      <label><span data-i="department"></span><select id="f-dept"></select></label>
+      <label><span data-i="equipment"></span><select id="f-equip"></select></label>
+      <label><span data-i="category"></span><select id="f-cat"></select></label>
+      <label><span data-i="problem"></span><select id="f-prob"></select></label>
+      <label><span data-i="language"></span><select id="f-lang"></select></label>
+    </div>
+    <div class="group">
+      <label><span data-i="from"></span><input type="date" id="f-from"></label>
+      <label><span data-i="to"></span><input type="date" id="f-to"></label>
+      <label><span data-i="umin"></span><input type="number" id="f-umin" min="1" step="1" placeholder="1"></label>
+      <label><span data-i="umax"></span><input type="number" id="f-umax" min="1" step="1" placeholder="24"></label>
+    </div>
+    <div class="foot"><button type="button" class="btn" id="reset" data-i="reset"></button></div>
+  </form>
+</dialog>
+
+<dialog id="menu" class="glass" aria-label="Menu">
+  <div class="menu-row"><span data-i="language"></span>
+    <span class="seg" role="group" aria-label="Idioma / Language"><button type="button" data-lang="ca">CA</button><button type="button" data-lang="es">ES</button><button type="button" data-lang="en">EN</button></span></div>
+  <div class="menu-sep"></div>
+  <button type="button" class="menu-item" id="print"><svg aria-hidden="true"><use href="#i-print"/></svg><span data-i="print"></span></button>
+</dialog>
+
+<dialog id="detail" aria-labelledby="d-title">
+  <div class="dhead glass"><h2 id="d-title"></h2><span class="actions">
+    <button class="round" id="d-prev"><svg aria-hidden="true"><use href="#i-back"/></svg></button>
+    <button class="round" id="d-next"><svg aria-hidden="true"><use href="#i-next"/></svg></button>
+    <button class="btn prominent" id="d-close" data-i="close"></button></span></div>
+  <div class="dbody" id="d-body"></div>
+</dialog>
+
+
+<script>
+const DADES = /*__DADES__*/[];
+const PROB = /*__PROBLEMES__*/{};
+
+/* ═════════════ Textos de la interfície ═════════════ */
+const T = {
+  ca: {
+    title: "Incidències informàtiques", subtitle: "Dades del formulari netejades, descodificades i validades. Tria una secció, combina filtres i obre qualsevol incidència per veure’n l’original.",
+    read: "registres llegits", fixed: "corregits (codificats o amb caràcters estranys)", discarded: "descartats (dades errònies)", valid: "vàlids per a l’anàlisi",
+    problem: "Problema", byProb: "Per problema", byProbHint: "El mateix problema escrit en qualsevol dels 12 idiomes compta com un de sol. Fes clic per filtrar.", translation: "Traducció", trToggle: "Descripcions traduïdes",
+    moreFilters: "Més filtres",
+    hlTop: (k, n, p, u) => [[k], ` és el valor més alt: ${n} ${u} (${p}).`],
+    hlPeak: (n, u, when) => ["El màxim és de ", [`${n} ${u}`], `, ${when}.`],
+    hlOne: p => [[p], " de les incidències afecten un sol usuari."],
+    hlLate: p => [[p], " de les incidències es notifiquen més de 90 dies després de passar."],
+    hlHour: (h, p) => [[p], ` dels formularis es van enviar entre les ${h}:00 i les ${h}:59.`],
+    weekOf: d => `la setmana del ${d}`, dayOf: d => `el ${d}`, monthOf: d => `el ${d}`,
+    appSub: "Servei TIC · formulari d’incidències",
+    sections: "Seccions", filtersBtn: "Filtres", done: "Fet",
+    pClean: "vàlids sense tocar", pFixed: "vàlids després de corregir-los", searchPh: "Cerca a tot, també el text original",
+    decKicker: (k, f, id) => `Així va arribar el camp «${f}» de la incidència #${id}`,
+    decMeta: k => `Descodificat automàticament (${k}).`, decCount: (i, n) => `${i} de ${n} tipus de codificació`,
+    sideStats: (n, d) => [[n], ` incidències vàlides · `, [d], ` dies`],
+    viewSub: { resum: "El que diuen les dades un cop netes, en una pantalla.", distribucio: "Què falla, on i a quanta gent afecta.", temporal: "Quan passen les incidències i quant es tarda a notificar-les.",
+      creuaments: "Combina dues dimensions per trobar relacions.", llocs: "Plantes, espais i equips que fallen més d’una vegada.", qualitat: "Com venien les dades i què s’ha fet per poder-les llegir.", explorador: "Totes les incidències, ordenables i exportables." },
+    print: "Imprimeix / PDF", search: "Cerca", department: "Departament", equipment: "Equip", category: "Categoria", language: "Idioma", status: "Estat",
+    from: "Des de", to: "Fins a", umin: "Usuaris mín.", umax: "Usuaris màx.", metric: "Mesura", m_n: "Incidències", m_u: "Usuaris afectats", reset: "Esborra filtres",
+    all: "Tots", st_valid: "Vàlides", st_bad: "Descartades", st_fixed: "Corregides", st_any: "Totes",
+    tabs: { resum: "Resum", distribucio: "Distribució", temporal: "Temporal", creuaments: "Creuaments", llocs: "Llocs i equips", qualitat: "Qualitat de dades", explorador: "Explorador" },
+    active: "Filtres:", none: "cap filtre, es mostren les incidències vàlides",
+    kpiTitle: "Xifres clau", kpiHint: "Calculades sobre les incidències que compleixen els filtres.",
+    k_inc: "incidències", k_users: "usuaris afectats", k_mean: "usuaris per incidència (mitjana)", k_med: "mediana d’usuaris", k_delay: "dies de retard en notificar (mitjana)", k_rep: "equips que han fallat 2+ vegades", k_days: "dies amb incidències", k_perday: "incidències per dia (mitjana)",
+    insTitle: "Conclusions", insHint: "Frases generades automàticament a partir de les dades filtrades.",
+    ins: {
+      topCat: (k, p) => `La categoria d’avaria més freqüent és ${k}, amb el ${p} de les incidències.`,
+      topDeptU: (k, n) => `El departament amb més usuaris afectats és ${k} (${n} usuaris en total).`,
+      worstEquip: (k, m) => `Les incidències de tipus «${k}» són les que afecten més gent: ${m} usuaris per incidència de mitjana.`,
+      topMonth: (k, n) => `El mes amb més incidències és ${k} (${n}).`,
+      topWd: (k, p) => `El dia de la setmana amb més incidències és ${k} (${p}).`,
+      topProb: (k, n) => `El problema més notificat és «${k}» (${n} vegades).`,
+      pareto: (n, tot, p) => `Unificant idiomes només hi ha ${tot} problemes diferents, i ${n} d’ells expliquen el ${p} de tot el que es notifica.`,
+      repeat: n => `${n} equips (mateix número d’inventari) han fallat més d’una vegada: són candidats a revisió o substitució.`,
+      delay: d => `Es tarda una mitjana de ${d} dies des que passa la incidència fins que es notifica.`,
+      quality: (p, b) => `El ${p} dels registres tenien dades camuflades o estranyes i s’han hagut de corregir; ${b} s’han descartat per ser erronis.`,
+      foreign: (p, n, m) => `El ${p} de les descripcions tenen text en un idioma que no és el català (${n} idiomes en total) i ${m} barregen dos idiomes.`,
+    },
+    byCat: "Per categoria d’avaria", byDept: "Per departament", byEquip: "Per tipus d’equip", byMonth: "Per mes", byWeekday: "Per dia de la setmana",
+    distHint: "Fes clic en una fila per filtrar-hi tot el panell.",
+    c_name: "Nom", c_inc: "Incid.", c_pct: "%", c_users: "Afectats", c_mean: "Mitjana", c_max: "Màx.", c_share: "Pes",
+    pareto: "Problemes més repetits (Pareto)", paretoHint: "Barres: vegades que apareix cada problema. Línia: percentatge acumulat. Cada descripció es divideix en frases i s’unifiquen els idiomes.",
+    cumul: "acumulat",
+    usersHist: "Usuaris afectats per incidència", usersHistHint: "Quantes incidències afecten 1, 2, 3… usuaris.",
+    severity: "Gravetat per abast", severityHint: "Segons el nombre d’usuaris afectats.",
+    sev: ["Individual (1)", "Petit grup (2–4)", "Grup (5–9)", "Ampli (10+)"],
+    timeline: "Evolució al llarg del temps", timelineHint: "Segons la data en què va passar la incidència.", g_d: "Dia", g_w: "Setmana", g_m: "Mes",
+    heatWM: "Mapa de calor: dia de la setmana × mes", heatHint: "Com més intens és el color, més incidències.",
+    byHour: "Hora de notificació", byHourHint: "Hora de la marca temporal del formulari.",
+    delay: "Retard entre incidència i notificació", delayHint: "Dies entre la data de la incidència i l’enviament del formulari.",
+    dbins: ["0–7 dies", "8–30 dies", "31–60 dies", "61–90 dies", "91–120 dies", "121–180 dies", "Més de 180"],
+    crossTitle: "Taula creuada", crossHint: "Tria què vols posar a les files i a les columnes. Es pot mostrar en valors absoluts o en percentatge per fila o per columna.",
+    rows: "Files", cols: "Columnes", x_abs: "Valors", x_row: "% fila", x_col: "% columna", total: "Total",
+    dims: { departament: "Departament", categoria_de_lavaria: "Categoria", tipus_dequip: "Equip", _probs: "Problema", idiomes: "Idioma", _floor: "Planta", _wd: "Dia de la setmana", _mon: "Mes", _sev: "Gravetat", _space: "Tipus d’espai" },
+    byFloor: "Per planta", floor: "Planta", noFloor: "Sense planta",
+    bySpace: "Per tipus d’espai", bySpaceHint: "Primera paraula de la ubicació, unificant idiomes (教室, Аудитория, Salle… → Aula, Sala…).",
+    topLoc: "Ubicacions amb més incidències",
+    repeat: "Equips reincidents", repeatHint: "Números d’inventari amb més d’una incidència. Si un mateix número apareix amb tipus d’equip diferents, probablement està mal escrit.",
+    r_inv: "Inventari", r_n: "Incid.", r_equip: "Equips", r_dept: "Departaments", r_dates: "Dates", r_cats: "Categories",
+    tech: "Tècnics assignats",
+    techText: (n, m, s) => `Hi ha ${n} tècnics diferents i el que en té més té ${m} incidència${m === 1 ? "" : "es"}. ${s} incidències no tenen tècnic. ${m <= 1 ? "Aquest camp no aporta informació sobre la càrrega de feina: sembla omplert a l’atzar." : ""}`,
+    dataVsInfo: "Dades i informació",
+    dataVsInfoText: "Les dades són el que arriba del formulari, tal qual. La informació és el que en treiem després de netejar-les i descartar les que no tenen sentit (com una incidència de l’any 2075 o amb 9999 usuaris afectats).",
+    q_rec: "registres llegits", q_fix: "registres corregits", q_fields: "camps corregits", q_bad: "registres descartats", q_pct: "aprofitats per a l’anàlisi",
+    tricks: "Codificacions corregides", fieldsCorrupt: "Camps més afectats", fieldsCorruptHint: "Percentatge de registres en què aquest camp venia codificat o brut.",
+    trickMatrix: "Camp × tipus de codificació", trickMatrixHint: "Quantes vegades s’ha trobat cada truc a cada camp.",
+    reasons: "Motius de descart", warnings: "Avisos (es mantenen, però es marquen)", byLang: "Idioma de la descripció",
+    examples: "Exemples de cada codificació", examplesHint: "Un cas real de cada tipus: com venia i com ha quedat.",
+    discList: "Registres descartats",
+    perPage: "Per pàgina", expCsv: "Exporta CSV", expJson: "Exporta JSON",
+    shown: (n, t) => `${n} de ${t} incidències`,
+    date: "Data", location: "Ubicació", description: "Descripció", users: "Usuaris", prev: "Anterior", next: "Següent", page: (p, n) => `Pàgina ${p} de ${n}`,
+    close: "Tanca", incident: "Incidència", origLabel: "Original:", translate: "Tradueix la descripció amb Google Traductor",
+    ok: "Vàlida", bad: "Descartada", fix: "Corregida", noresults: "Cap incidència coincideix amb els filtres. Prova d’esborrar-ne algun.",
+    errors: "Per què s’ha descartat", warnLabel: "Avisos", nodata: "Sense dades", before: "Abans", after: "Després",
+    fields: { marca_temporal: "Marca temporal", data_de_la_incidencia: "Data de la incidència", usuari_afectat: "Usuari afectat", departament: "Departament",
+      tipus_dequip: "Tipus d’equip", ubicacio: "Ubicació", numero_dinventari: "Núm. d’inventari", categoria_de_lavaria: "Categoria",
+      descripcio_de_la_incidencia: "Descripció", usuaris_afectats: "Usuaris afectats", contacte_del_tecnic_assignat: "Tècnic assignat" },
+    months: ["gener", "febrer", "març", "abril", "maig", "juny", "juliol", "agost", "setembre", "octubre", "novembre", "desembre"],
+    mshort: ["gen", "feb", "març", "abr", "maig", "juny", "jul", "ag", "set", "oct", "nov", "des"],
+    wd: ["dilluns", "dimarts", "dimecres", "dijous", "divendres", "dissabte", "diumenge"], wdshort: ["dl", "dt", "dc", "dj", "dv", "ds", "dg"],
+  },
+  es: {
+    title: "Incidencias informáticas", subtitle: "Datos del formulario limpiados, descodificados y validados. Elige una sección, combina filtros y abre cualquier incidencia para ver su original.",
+    read: "registros leídos", fixed: "corregidos (codificados o con caracteres extraños)", discarded: "descartados (datos erróneos)", valid: "válidos para el análisis",
+    problem: "Problema", byProb: "Por problema", byProbHint: "El mismo problema escrito en cualquiera de los 12 idiomas cuenta como uno solo. Haz clic para filtrar.", translation: "Traducción", trToggle: "Descripciones traducidas",
+    moreFilters: "Más filtros",
+    hlTop: (k, n, p, u) => [[k], ` es el valor más alto: ${n} ${u} (${p}).`],
+    hlPeak: (n, u, when) => ["El máximo es de ", [`${n} ${u}`], `, ${when}.`],
+    hlOne: p => [[p], " de las incidencias afectan a un solo usuario."],
+    hlLate: p => [[p], " de las incidencias se notifican más de 90 días después de ocurrir."],
+    hlHour: (h, p) => [[p], ` de los formularios se enviaron entre las ${h}:00 y las ${h}:59.`],
+    weekOf: d => `la semana del ${d}`, dayOf: d => `el ${d}`, monthOf: d => `en ${d}`,
+    appSub: "Servicio TIC · formulario de incidencias",
+    sections: "Secciones", filtersBtn: "Filtros", done: "OK",
+    pClean: "válidos sin tocar", pFixed: "válidos tras corregirlos", searchPh: "Busca en todo, también en el texto original",
+    decKicker: (k, f, id) => `Así llegó el campo «${f}» de la incidencia #${id}`,
+    decMeta: k => `Descodificado automáticamente (${k}).`, decCount: (i, n) => `${i} de ${n} tipos de codificación`,
+    sideStats: (n, d) => [[n], ` incidencias válidas · `, [d], ` días`],
+    viewSub: { resum: "Lo que dicen los datos una vez limpios, en una pantalla.", distribucio: "Qué falla, dónde y a cuánta gente afecta.", temporal: "Cuándo ocurren las incidencias y cuánto se tarda en notificarlas.",
+      creuaments: "Combina dos dimensiones para encontrar relaciones.", llocs: "Plantas, espacios y equipos que fallan más de una vez.", qualitat: "Cómo venían los datos y qué se ha hecho para poder leerlos.", explorador: "Todas las incidencias, ordenables y exportables." },
+    print: "Imprimir / PDF", search: "Buscar", department: "Departamento", equipment: "Equipo", category: "Categoría", language: "Idioma", status: "Estado",
+    from: "Desde", to: "Hasta", umin: "Usuarios mín.", umax: "Usuarios máx.", metric: "Medida", m_n: "Incidencias", m_u: "Usuarios afectados", reset: "Borrar filtros",
+    all: "Todos", st_valid: "Válidas", st_bad: "Descartadas", st_fixed: "Corregidas", st_any: "Todas",
+    tabs: { resum: "Resumen", distribucio: "Distribución", temporal: "Temporal", creuaments: "Cruces", llocs: "Lugares y equipos", qualitat: "Calidad de datos", explorador: "Explorador" },
+    active: "Filtros:", none: "ningún filtro, se muestran las incidencias válidas",
+    kpiTitle: "Cifras clave", kpiHint: "Calculadas sobre las incidencias que cumplen los filtros.",
+    k_inc: "incidencias", k_users: "usuarios afectados", k_mean: "usuarios por incidencia (media)", k_med: "mediana de usuarios", k_delay: "días de retraso al notificar (media)", k_rep: "equipos que han fallado 2+ veces", k_days: "días con incidencias", k_perday: "incidencias por día (media)",
+    insTitle: "Conclusiones", insHint: "Frases generadas automáticamente a partir de los datos filtrados.",
+    ins: {
+      topCat: (k, p) => `La categoría de avería más frecuente es ${k}, con el ${p} de las incidencias.`,
+      topDeptU: (k, n) => `El departamento con más usuarios afectados es ${k} (${n} usuarios en total).`,
+      worstEquip: (k, m) => `Las incidencias de tipo «${k}» son las que afectan a más gente: ${m} usuarios por incidencia de media.`,
+      topMonth: (k, n) => `El mes con más incidencias es ${k} (${n}).`,
+      topWd: (k, p) => `El día de la semana con más incidencias es ${k} (${p}).`,
+      topProb: (k, n) => `El problema más notificado es «${k}» (${n} veces).`,
+      pareto: (n, tot, p) => `Unificando idiomas solo hay ${tot} problemas distintos, y ${n} de ellos explican el ${p} de todo lo que se notifica.`,
+      repeat: n => `${n} equipos (mismo número de inventario) han fallado más de una vez: son candidatos a revisión o sustitución.`,
+      delay: d => `Se tarda una media de ${d} días desde que ocurre la incidencia hasta que se notifica.`,
+      quality: (p, b) => `El ${p} de los registros tenían datos camuflados o extraños y se han corregido; ${b} se han descartado por erróneos.`,
+      foreign: (p, n, m) => `El ${p} de las descripciones tienen texto en un idioma que no es el catalán (${n} idiomas en total) y ${m} mezclan dos idiomas.`,
+    },
+    byCat: "Por categoría de avería", byDept: "Por departamento", byEquip: "Por tipo de equipo", byMonth: "Por mes", byWeekday: "Por día de la semana",
+    distHint: "Haz clic en una fila para filtrar todo el panel.",
+    c_name: "Nombre", c_inc: "Incid.", c_pct: "%", c_users: "Afectados", c_mean: "Media", c_max: "Máx.", c_share: "Peso",
+    pareto: "Problemas más repetidos (Pareto)", paretoHint: "Barras: veces que aparece cada problema. Línea: porcentaje acumulado. Cada descripción se divide en frases y se unifican los idiomas.",
+    cumul: "acumulado",
+    usersHist: "Usuarios afectados por incidencia", usersHistHint: "Cuántas incidencias afectan a 1, 2, 3… usuarios.",
+    severity: "Gravedad por alcance", severityHint: "Según el número de usuarios afectados.",
+    sev: ["Individual (1)", "Grupo pequeño (2–4)", "Grupo (5–9)", "Amplio (10+)"],
+    timeline: "Evolución en el tiempo", timelineHint: "Según la fecha en que ocurrió la incidencia.", g_d: "Día", g_w: "Semana", g_m: "Mes",
+    heatWM: "Mapa de calor: día de la semana × mes", heatHint: "Cuanto más intenso el color, más incidencias.",
+    byHour: "Hora de notificación", byHourHint: "Hora de la marca temporal del formulario.",
+    delay: "Retraso entre incidencia y notificación", delayHint: "Días entre la fecha de la incidencia y el envío del formulario.",
+    dbins: ["0–7 días", "8–30 días", "31–60 días", "61–90 días", "91–120 días", "121–180 días", "Más de 180"],
+    crossTitle: "Tabla cruzada", crossHint: "Elige qué poner en filas y columnas. Se puede ver en valores absolutos o en porcentaje por fila o por columna.",
+    rows: "Filas", cols: "Columnas", x_abs: "Valores", x_row: "% fila", x_col: "% columna", total: "Total",
+    dims: { departament: "Departamento", categoria_de_lavaria: "Categoría", tipus_dequip: "Equipo", _probs: "Problema", idiomes: "Idioma", _floor: "Planta", _wd: "Día de la semana", _mon: "Mes", _sev: "Gravedad", _space: "Tipo de espacio" },
+    byFloor: "Por planta", floor: "Planta", noFloor: "Sin planta",
+    bySpace: "Por tipo de espacio", bySpaceHint: "Primera palabra de la ubicación, unificando idiomas (教室, Аудитория, Salle… → Aula, Sala…).",
+    topLoc: "Ubicaciones con más incidencias",
+    repeat: "Equipos reincidentes", repeatHint: "Números de inventario con más de una incidencia. Si un mismo número aparece con tipos de equipo distintos, probablemente está mal escrito.",
+    r_inv: "Inventario", r_n: "Incid.", r_equip: "Equipos", r_dept: "Departamentos", r_dates: "Fechas", r_cats: "Categorías",
+    tech: "Técnicos asignados",
+    techText: (n, m, s) => `Hay ${n} técnicos distintos y el que más tiene suma ${m} incidencia${m === 1 ? "" : "s"}. ${s} incidencias no tienen técnico. ${m <= 1 ? "Este campo no aporta información sobre la carga de trabajo: parece rellenado al azar." : ""}`,
+    dataVsInfo: "Datos e información",
+    dataVsInfoText: "Los datos son lo que llega del formulario, tal cual. La información es lo que sacamos tras limpiarlos y descartar los que no tienen sentido (como una incidencia del año 2075 o con 9999 usuarios afectados).",
+    q_rec: "registros leídos", q_fix: "registros corregidos", q_fields: "campos corregidos", q_bad: "registros descartados", q_pct: "aprovechados para el análisis",
+    tricks: "Codificaciones corregidas", fieldsCorrupt: "Campos más afectados", fieldsCorruptHint: "Porcentaje de registros en que este campo venía codificado o sucio.",
+    trickMatrix: "Campo × tipo de codificación", trickMatrixHint: "Cuántas veces se ha encontrado cada truco en cada campo.",
+    reasons: "Motivos de descarte", warnings: "Avisos (se mantienen, pero se marcan)", byLang: "Idioma de la descripción",
+    examples: "Ejemplos de cada codificación", examplesHint: "Un caso real de cada tipo: cómo venía y cómo ha quedado.",
+    discList: "Registros descartados",
+    perPage: "Por página", expCsv: "Exportar CSV", expJson: "Exportar JSON",
+    shown: (n, t) => `${n} de ${t} incidencias`,
+    date: "Fecha", location: "Ubicación", description: "Descripción", users: "Usuarios", prev: "Anterior", next: "Siguiente", page: (p, n) => `Página ${p} de ${n}`,
+    close: "Cerrar", incident: "Incidencia", origLabel: "Original:", translate: "Traducir la descripción con Google Traductor",
+    ok: "Válida", bad: "Descartada", fix: "Corregida", noresults: "Ninguna incidencia coincide con los filtros. Prueba a borrar alguno.",
+    errors: "Por qué se ha descartado", warnLabel: "Avisos", nodata: "Sin datos", before: "Antes", after: "Después",
+    fields: { marca_temporal: "Marca temporal", data_de_la_incidencia: "Fecha de la incidencia", usuari_afectat: "Usuario afectado", departament: "Departamento",
+      tipus_dequip: "Tipo de equipo", ubicacio: "Ubicación", numero_dinventari: "Nº de inventario", categoria_de_lavaria: "Categoría",
+      descripcio_de_la_incidencia: "Descripción", usuaris_afectats: "Usuarios afectados", contacte_del_tecnic_assignat: "Técnico asignado" },
+    months: ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"],
+    mshort: ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"],
+    wd: ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"], wdshort: ["lu", "ma", "mi", "ju", "vi", "sá", "do"],
+  },
+  en: {
+    title: "IT incidents", subtitle: "Form data cleaned, decoded and validated. Pick a section, combine filters and open any incident to see the original.",
+    read: "records read", fixed: "fixed (encoded or with odd characters)", discarded: "discarded (bad data)", valid: "valid for analysis",
+    problem: "Problem", byProb: "By problem", byProbHint: "The same problem written in any of the 12 languages counts as one. Click to filter.", translation: "Translation", trToggle: "Translated descriptions",
+    moreFilters: "More filters",
+    hlTop: (k, n, p, u) => [[k], ` is the highest value: ${n} ${u} (${p}).`],
+    hlPeak: (n, u, when) => ["The peak is ", [`${n} ${u}`], `, ${when}.`],
+    hlOne: p => [[p], " of incidents affect a single user."],
+    hlLate: p => [[p], " of incidents are reported more than 90 days after they happen."],
+    hlHour: (h, p) => [[p], ` of forms were submitted between ${h}:00 and ${h}:59.`],
+    weekOf: d => `in the week of ${d}`, dayOf: d => `on ${d}`, monthOf: d => `in ${d}`,
+    appSub: "IT service · incident form",
+    sections: "Sections", filtersBtn: "Filters", done: "Done",
+    pClean: "valid as received", pFixed: "valid after fixing", searchPh: "Search everything, including the original text",
+    decKicker: (k, f, id) => `This is how the “${f}” field of incident #${id} arrived`,
+    decMeta: k => `Decoded automatically (${k}).`, decCount: (i, n) => `${i} of ${n} encoding types`,
+    sideStats: (n, d) => [[n], ` valid incidents · `, [d], ` days`],
+    viewSub: { resum: "What the data says once it’s clean, on one screen.", distribucio: "What fails, where, and how many people it affects.", temporal: "When incidents happen and how long they take to be reported.",
+      creuaments: "Combine two dimensions to find relationships.", llocs: "Floors, spaces and devices that fail more than once.", qualitat: "How the data arrived and what was done to make it readable.", explorador: "Every incident, sortable and exportable." },
+    print: "Print / PDF", search: "Search", department: "Department", equipment: "Equipment", category: "Category", language: "Language", status: "Status",
+    from: "From", to: "To", umin: "Min. users", umax: "Max. users", metric: "Measure", m_n: "Incidents", m_u: "Affected users", reset: "Clear filters",
+    all: "All", st_valid: "Valid", st_bad: "Discarded", st_fixed: "Fixed", st_any: "Any",
+    tabs: { resum: "Summary", distribucio: "Breakdown", temporal: "Over time", creuaments: "Cross-tabs", llocs: "Places & devices", qualitat: "Data quality", explorador: "Explorer" },
+    active: "Filters:", none: "no filters, showing valid incidents",
+    kpiTitle: "Key figures", kpiHint: "Computed over the incidents that match the filters.",
+    k_inc: "incidents", k_users: "affected users", k_mean: "users per incident (mean)", k_med: "median users", k_delay: "days before reporting (mean)", k_rep: "devices that failed 2+ times", k_days: "days with incidents", k_perday: "incidents per day (mean)",
+    insTitle: "Takeaways", insHint: "Sentences generated automatically from the filtered data.",
+    ins: {
+      topCat: (k, p) => `The most common fault category is ${k}, with ${p} of incidents.`,
+      topDeptU: (k, n) => `The department with the most affected users is ${k} (${n} users in total).`,
+      worstEquip: (k, m) => `Incidents with “${k}” affect the most people: ${m} users per incident on average.`,
+      topMonth: (k, n) => `The busiest month is ${k} (${n}).`,
+      topWd: (k, p) => `The busiest weekday is ${k} (${p}).`,
+      topProb: (k, n) => `The most reported problem is “${k}” (${n} times).`,
+      pareto: (n, tot, p) => `Once languages are merged there are only ${tot} distinct problems, and ${n} of them account for ${p} of everything reported.`,
+      repeat: n => `${n} devices (same inventory number) failed more than once: candidates for review or replacement.`,
+      delay: d => `On average it takes ${d} days from the incident until it is reported.`,
+      quality: (p, b) => `${p} of records had disguised or odd data and were fixed; ${b} were discarded as invalid.`,
+      foreign: (p, n, m) => `${p} of descriptions contain text in a language other than Catalan (${n} languages in total) and ${m} mix two languages.`,
+    },
+    byCat: "By fault category", byDept: "By department", byEquip: "By equipment type", byMonth: "By month", byWeekday: "By weekday",
+    distHint: "Click a row to filter the whole dashboard.",
+    c_name: "Name", c_inc: "Incid.", c_pct: "%", c_users: "Affected", c_mean: "Mean", c_max: "Max", c_share: "Share",
+    pareto: "Most repeated problems (Pareto)", paretoHint: "Bars: how often each problem appears. Line: cumulative percentage. Each description is split into sentences and languages are merged.",
+    cumul: "cumulative",
+    usersHist: "Affected users per incident", usersHistHint: "How many incidents affect 1, 2, 3… users.",
+    severity: "Severity by reach", severityHint: "Based on the number of affected users.",
+    sev: ["Individual (1)", "Small group (2–4)", "Group (5–9)", "Wide (10+)"],
+    timeline: "Over time", timelineHint: "By the date the incident happened.", g_d: "Day", g_w: "Week", g_m: "Month",
+    heatWM: "Heatmap: weekday × month", heatHint: "The stronger the colour, the more incidents.",
+    byHour: "Reporting hour", byHourHint: "Hour of the form timestamp.",
+    delay: "Delay between incident and report", delayHint: "Days between the incident date and the form submission.",
+    dbins: ["0–7 days", "8–30 days", "31–60 days", "61–90 days", "91–120 days", "121–180 days", "Over 180"],
+    crossTitle: "Cross-tab", crossHint: "Choose what goes in rows and columns. Show absolute values or percentages by row or by column.",
+    rows: "Rows", cols: "Columns", x_abs: "Values", x_row: "Row %", x_col: "Column %", total: "Total",
+    dims: { departament: "Department", categoria_de_lavaria: "Category", tipus_dequip: "Equipment", _probs: "Problem", idiomes: "Language", _floor: "Floor", _wd: "Weekday", _mon: "Month", _sev: "Severity", _space: "Space type" },
+    byFloor: "By floor", floor: "Floor", noFloor: "No floor",
+    bySpace: "By space type", bySpaceHint: "First word of the location, merged across languages (教室, Аудитория, Salle… → Classroom, Room…).",
+    topLoc: "Locations with most incidents",
+    repeat: "Repeat-failure devices", repeatHint: "Inventory numbers with more than one incident. If the same number shows different device types, it was probably mistyped.",
+    r_inv: "Inventory", r_n: "Incid.", r_equip: "Devices", r_dept: "Departments", r_dates: "Dates", r_cats: "Categories",
+    tech: "Assigned technicians",
+    techText: (n, m, s) => `There are ${n} different technicians and the busiest has ${m} incident${m === 1 ? "" : "s"}. ${s} incidents have no technician. ${m <= 1 ? "This field says nothing about workload: it looks randomly filled." : ""}`,
+    dataVsInfo: "Data and information",
+    dataVsInfoText: "Data is what comes in from the form, as is. Information is what we get after cleaning it and discarding what makes no sense (like an incident in 2075 or with 9999 affected users).",
+    q_rec: "records read", q_fix: "records fixed", q_fields: "fields fixed", q_bad: "records discarded", q_pct: "usable for analysis",
+    tricks: "Encodings fixed", fieldsCorrupt: "Most affected fields", fieldsCorruptHint: "Share of records where this field arrived encoded or dirty.",
+    trickMatrix: "Field × encoding type", trickMatrixHint: "How often each trick was found in each field.",
+    reasons: "Reasons for discarding", warnings: "Warnings (kept, but flagged)", byLang: "Description language",
+    examples: "One example of each encoding", examplesHint: "A real case of each kind: how it arrived and how it ended up.",
+    discList: "Discarded records",
+    perPage: "Per page", expCsv: "Export CSV", expJson: "Export JSON",
+    shown: (n, t) => `${n} of ${t} incidents`,
+    date: "Date", location: "Location", description: "Description", users: "Users", prev: "Previous", next: "Next", page: (p, n) => `Page ${p} of ${n}`,
+    close: "Close", incident: "Incident", origLabel: "Original:", translate: "Translate the description with Google Translate",
+    ok: "Valid", bad: "Discarded", fix: "Fixed", noresults: "No incidents match these filters. Try clearing one.",
+    errors: "Why it was discarded", warnLabel: "Warnings", nodata: "No data", before: "Before", after: "After",
+    fields: { marca_temporal: "Timestamp", data_de_la_incidencia: "Incident date", usuari_afectat: "Affected user", departament: "Department",
+      tipus_dequip: "Equipment type", ubicacio: "Location", numero_dinventari: "Inventory no.", categoria_de_lavaria: "Category",
+      descripcio_de_la_incidencia: "Description", usuaris_afectats: "Affected users", contacte_del_tecnic_assignat: "Assigned technician" },
+    months: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
+    mshort: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+    wd: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"], wdshort: ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"],
+  },
+};
+
+/* Traducció dels valors de les dades */
+const V = {
+  es: { "Administració": "Administración", "Docència": "Docencia", "Direcció": "Dirección", "Secretaria": "Secretaría", "Manteniment": "Mantenimiento",
+    "Orientació": "Orientación", "Consergeria": "Conserjería", "Comunicació": "Comunicación", "Cuina": "Cocina",
+    "Ordinador": "Ordenador", "Impressora": "Impresora", "Projector": "Proyector", "Altaveus": "Altavoces", "Tauleta": "Tableta", "Escàner": "Escáner", "Pissarra digital": "Pizarra digital",
+    "Xarxa": "Red", "Perifèrics": "Periféricos", "No identificat": "No identificado", "Configuració": "Configuración", "Cablejat": "Cableado", "Alimentació elèctrica": "Alimentación eléctrica", "Llicències": "Licencias",
+    "binari": "binario", "entitats HTML": "entidades HTML", "seqüències d'escapament": "secuencias de escape", "caràcters invisibles": "caracteres invisibles", "text zalgo": "texto zalgo",
+    "Unicode estilitzat": "Unicode estilizado", "homoglifs ciríl·lics": "homoglifos cirílicos", "cometes/brossa": "comillas/basura", "majúscules/signes": "mayúsculas/signos",
+    "Aula": "Aula", "Despatx": "Despacho", "Laboratori": "Laboratorio", "Sala": "Sala" },
+  en: { "Administració": "Administration", "Docència": "Teaching", "Direcció": "Management", "Biblioteca": "Library", "Secretaria": "Office", "Manteniment": "Maintenance",
+    "Orientació": "Counselling", "Consergeria": "Reception", "Comunicació": "Communication", "Cuina": "Kitchen",
+    "Ordinador": "Computer", "Impressora": "Printer", "Projector": "Projector", "Altaveus": "Speakers", "Tauleta": "Tablet", "Escàner": "Scanner", "Pissarra digital": "Digital whiteboard",
+    "Xarxa": "Network", "Perifèrics": "Peripherals", "No identificat": "Unidentified", "Configuració": "Configuration", "Cablejat": "Cabling", "Alimentació elèctrica": "Power supply", "Llicències": "Licences",
+    "binari": "binary", "entitats HTML": "HTML entities", "seqüències d'escapament": "escape sequences", "caràcters invisibles": "invisible characters", "text zalgo": "zalgo text",
+    "Unicode estilitzat": "styled Unicode", "homoglifs ciríl·lics": "Cyrillic homoglyphs", "cometes/brossa": "quotes/junk", "majúscules/signes": "case/punctuation",
+    "Aula": "Classroom", "Despatx": "Office", "Laboratori": "Lab", "Sala": "Room" },
+};
+const LANGS = {
+  ca: { ca: "Català", es: "Castellà", en: "Anglès", pt: "Portuguès", fr: "Francès", it: "Italià", de: "Alemany", ja: "Japonès", zh: "Xinès", ko: "Coreà", ru: "Rus", ar: "Àrab", el: "Grec", am: "Amhàric", he: "Hebreu", th: "Tai", hi: "Hindi", "?": "Desconegut" },
+  es: { ca: "Catalán", es: "Castellano", en: "Inglés", pt: "Portugués", fr: "Francés", it: "Italiano", de: "Alemán", ja: "Japonés", zh: "Chino", ko: "Coreano", ru: "Ruso", ar: "Árabe", el: "Griego", am: "Amárico", he: "Hebreo", th: "Tailandés", hi: "Hindi", "?": "Desconocido" },
+  en: { ca: "Catalan", es: "Spanish", en: "English", pt: "Portuguese", fr: "French", it: "Italian", de: "German", ja: "Japanese", zh: "Chinese", ko: "Korean", ru: "Russian", ar: "Arabic", el: "Greek", am: "Amharic", he: "Hebrew", th: "Thai", hi: "Hindi", "?": "Unknown" },
+};
+const FIELDS = Object.keys(T.ca.fields);
+const CATEG = ["departament", "tipus_dequip", "categoria_de_lavaria"];
+
+let lang = "ca";
+try { lang = localStorage.getItem("inc-lang") || "ca"; } catch (e) {}
+if (!T[lang]) lang = "ca";
+const t = k => T[lang][k];
+const v = x => (V[lang] && V[lang][x]) || x;
+const lname = c => LANGS[lang][c] || c;
+const pv = id => (PROB[id] && PROB[id][lang]) || id;                 // nom del problema en l’idioma de la interfície
+const trDesc = r => (r.problemes || []).map(pv).join(". ");          // descripció traduïda
+const fmt = (n, d = 0) => Number(n).toLocaleString(lang === "en" ? "en-GB" : lang, { minimumFractionDigits: d, maximumFractionDigits: d });
+const pct = (a, b) => b ? fmt(a / b * 100, 1) + "\u00a0%" : "–";
+
+/* ═════════════ Utilitats ═════════════ */
+const norm = s => (s || "").normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+const $ = id => document.getElementById(id);
+function el(tag, props = {}, ...kids) {
+  const e = document.createElement(tag);
+  for (const [k, val] of Object.entries(props)) {
+    if (k === "class") e.className = val; else if (k === "style") e.setAttribute("style", val);
+    else if (k.startsWith("on")) e.addEventListener(k.slice(2), val);
+    else if (k.includes("-") || k === "role") e.setAttribute(k, val); else e[k] = val;
+  }
+  for (const kid of kids) if (kid != null) e.append(kid);   // append() amb text: sempre text, mai HTML
+  return e;
+}
+const SVG = "http://www.w3.org/2000/svg";
+function sv(tag, attrs = {}, ...kids) { const e = document.createElementNS(SVG, tag); for (const [k, val] of Object.entries(attrs)) e.setAttribute(k, val); for (const k of kids) e.append(k); return e; }
+const sum = a => a.reduce((x, y) => x + y, 0);
+const median = a => { if (!a.length) return 0; const s = [...a].sort((x, y) => x - y), h = s.length >> 1; return s.length % 2 ? s[h] : (s[h - 1] + s[h]) / 2; };
+const users = r => Number.isFinite(r.usuaris) && r.usuaris <= 200 ? r.usuaris : 0;
+/* Agrupar: Map clau → {n: incidències, u: usuaris afectats, max} */
+function group(rows, f) {
+  const m = new Map();
+  for (const r of rows) for (const k of [].concat(f(r))) {
+    if (k === undefined || k === null || k === "") continue;
+    const g = m.get(k) || { n: 0, u: 0, max: 0 }; g.n++; g.u += users(r); g.max = Math.max(g.max, users(r)); m.set(k, g);
+  }
+  return m;
+}
+const val = g => st.metric === "u" ? g.u : g.n;
+const sorted = (m, n) => [...m].sort((a, b) => val(b[1]) - val(a[1])).slice(0, n);
+const heat = p => `background:color-mix(in srgb, var(--blue) calc(var(--heat-max) * ${p.toFixed(3)}), transparent);color:var(--ink)`;
+
+/* Camps derivats */
+const SEV = u => u <= 1 ? 0 : u <= 4 ? 1 : u <= 9 ? 2 : 3;
+for (const r of DADES) {
+  r._fix = Object.keys(r.trucs).length > 0;
+  r._q = norm(FIELDS.map(f => r[f] + " " + r.original[f]).join(" ") + " #" + r.id);
+  if (r.data) { const d = new Date(r.data + "T12:00:00"); r._mon = d.getMonth(); r._wd = (d.getDay() + 6) % 7; }
+  if (r.marca) { r._hour = +r.marca.slice(11, 13); if (r.data) r._delay = Math.round((new Date(r.marca.slice(0, 10)) - new Date(r.data)) / 864e5); }
+  const m = /(\d)\.\d{2}/.exec(r.ubicacio); r._floor = m ? m[1] : "?";
+  r._space = r.espai || (r.ubicacio.split(/\s+/)[0] || "?");
+  r._sev = SEV(users(r));
+  r._probs = r.problemes || [];
+  r.idiomes = r.idiomes || [r.idioma];
+  r._multi = r.idiomes.length > 1;
+}
+const DIMLABEL = {
+  departament: v, categoria_de_lavaria: v, tipus_dequip: v, idiomes: lname, _probs: pv, _space: v,
+  _floor: k => k === "?" ? t("noFloor") : `${t("floor")} ${k}`, _wd: k => t("wd")[k], _mon: k => t("months")[k], _sev: k => t("sev")[k],
+};
+const ORDERED = new Set(["_floor", "_wd", "_mon", "_sev"]);
+
+/* ═════════════ Estat ═════════════ */
+const DEF = { q: "", dept: "", equip: "", cat: "", prob: "", lang: "", status: "valid", from: "", to: "", umin: "", umax: "", metric: "n" };
+const st = { ...DEF, tr: false, page: 1, pp: 25, sort: "id", dir: 1, gran: "w", xr: "departament", xc: "categoria_de_lavaria", xm: "abs", view: "resum" };
+const VIEWS = ["resum", "distribucio", "temporal", "creuaments", "llocs", "qualitat", "explorador"];
+
+function filtered(opts = {}) {
+  const status = opts.status || st.status;
+  const q = norm(st.q.trim()).split(/\s+/).filter(Boolean);
+  return DADES.filter(r =>
+    (status === "any" || (status === "valid" && r.valida) || (status === "bad" && !r.valida) || (status === "fixed" && r._fix)) &&
+    (!st.dept || r.departament === st.dept) && (!st.equip || r.tipus_dequip === st.equip) &&
+    (!st.cat || r.categoria_de_lavaria === st.cat) && (!st.lang || r.idiomes.includes(st.lang)) &&
+    (!st.prob || r._probs.includes(st.prob)) &&
+    (!st.from || (r.data && r.data >= st.from)) && (!st.to || (r.data && r.data <= st.to)) &&
+    (!st.umin || users(r) >= +st.umin) && (!st.umax || users(r) <= +st.umax) &&
+    q.every(w => r._q.includes(w)));
+}
+function setFilter(k, value) { st[k] = st[k] === value ? "" : value; st.page = 1; syncControls(); render(); }
+
+/* ═════════════ Components de gràfic ═════════════ */
+function bars(id, entries, { label = x => x, color = "var(--blue)", filterKey = null, metric = true } = {}) {
+  const box = $(id); box.replaceChildren();
+  if (!entries.length) { box.append(el("span", { class: "v", textContent: t("nodata") })); return; }
+  const get = e => typeof e[1] === "number" ? e[1] : (metric ? val(e[1]) : e[1].n);
+  const max = Math.max(...entries.map(get), 1), tot = sum(entries.map(get));
+  for (const e of entries) {
+    const k = e[0], n = get(e), name = label(k);
+    const key = filterKey
+      ? el("button", { class: "k", type: "button", title: name, textContent: name, onclick: () => setFilter(filterKey, k) })
+      : el("span", { class: "k", title: name, textContent: name });
+    box.append(key, el("div", {}, el("div", { class: "bar", style: `width:${(n / max * 100).toFixed(1)}%;background:${color}` })),
+      el("span", { class: "v", textContent: `${fmt(n)}` }));
+  }
+}
+function cols(id, keys, getN, label, { title = k => label(k), color = "var(--blue)" } = {}) {
+  const box = $(id); const vals = keys.map(getN); const mx = Math.max(1, ...vals);
+  if (!keys.length || !sum(vals)) { box.replaceChildren(el("span", { class: "v", textContent: t("nodata") })); return; }
+  box.replaceChildren(...keys.map((k, i) => el("div", { title: `${title(k)}: ${fmt(vals[i])}`, role: "img", "aria-label": `${title(k)}: ${fmt(vals[i])}` },
+    el("b", { textContent: vals[i] ? fmt(vals[i]) : "" }), el("i", { style: `height:${vals[i] / mx * 125}px;background:${color}` }), label(k))));
+}
+function distTable(id, m, filterKey, label = v) {
+  const rows = sorted(m), totN = sum(rows.map(r => r[1].n)), totU = sum(rows.map(r => r[1].u)), mx = Math.max(1, ...rows.map(r => val(r[1])));
+  const tb = el("tbody");
+  for (const [k, g] of rows) {
+    tb.append(el("tr", { tabIndex: 0, onclick: () => setFilter(filterKey, k), onkeydown: e => { if (e.key === "Enter") setFilter(filterKey, k); } },
+      el("td", { textContent: label(k) }), el("td", { class: "n", textContent: fmt(g.n) }), el("td", { class: "n", textContent: pct(g.n, totN) }),
+      el("td", { style: "width:30%" }, el("div", { class: "minibar", style: `width:${val(g) / mx * 100}%` })),
+      el("td", { class: "n", textContent: fmt(g.u) }), el("td", { class: "n", textContent: pct(g.u, totU) }),
+      el("td", { class: "n", textContent: fmt(g.u / g.n, 2) }), el("td", { class: "n", textContent: fmt(g.max) })));
+  }
+  const th = s => el("th", { class: "n", textContent: s });
+  $(id).replaceChildren(rows.length ? el("table", { class: "dist" },
+    el("thead", {}, el("tr", {}, el("th", { textContent: t("c_name") }), th(t("c_inc")), th(t("c_pct")), el("th"), th(t("c_users")), th(t("c_share")), th(t("c_mean")), th(t("c_max")))), tb)
+    : el("span", { class: "v", textContent: t("nodata") }));
+}
+/* Escala amb valors "rodons" (0, 5, 10…): charts.md › Axes */
+function niceTicks(max, n = 4) {
+  if (max <= 0) return [0, 1];
+  const raw = max / n, pow = 10 ** Math.floor(Math.log10(raw)), step = [1, 2, 2.5, 5, 10].map(m => m * pow).find(m => m >= raw);
+  const out = []; for (let x = 0; x < max + step - 1e-9; x += step) out.push(Math.round(x * 100) / 100);
+  return out;
+}
+/* Titular amb el missatge principal del gràfic (charts.md › Descriptive content). També és la descripció per a lectors de pantalla. */
+function headline(id, parts) {
+  const box = $(id); let p = box.previousElementSibling;
+  if (!p || !p.classList.contains("headline")) { p = el("p", { class: "headline" }); box.before(p); }
+  p.replaceChildren(...(parts || []).map(x => Array.isArray(x) ? el("b", { textContent: x[0] }) : x));
+  box.setAttribute("role", "group"); box.setAttribute("aria-label", p.textContent);
+}
+function lineChart(id, points, label, longLabel = label) {
+  const box = $(id);
+  if (!points.length) { box.replaceChildren(el("span", { class: "v", textContent: t("nodata") })); return; }
+  const W = Math.max(640, points.length * 12, box.clientWidth - 4), H = 250, L = 8, B = 28, R = 44, Tp = 12;
+  const ticks = niceTicks(Math.max(...points.map(p => p[1]))), mx = ticks[ticks.length - 1];
+  const x = i => L + (points.length === 1 ? (W - L - R) / 2 : i * (W - L - R) / (points.length - 1)), y = n => Tp + (H - Tp - B) * (1 - n / mx);
+  const g = sv("svg", { viewBox: `0 0 ${W} ${H}`, width: W, height: H, "aria-hidden": "true" });
+  /* Eix Y al costat final: la vora inicial del gràfic queda alineada amb la resta del panell */
+  for (const n of ticks) { const yy = y(n); g.append(sv("line", { x1: L, x2: W - R, y1: yy, y2: yy, class: "grid-l" }), sv("text", { x: W - R + 6, y: yy + 4 }, fmt(n))); }
+  const d = points.map((p, i) => `${i ? "L" : "M"}${x(i).toFixed(1)},${y(p[1]).toFixed(1)}`).join("");
+  g.append(sv("path", { d: d + `L${x(points.length - 1)},${y(0)}L${x(0)},${y(0)}Z`, fill: "var(--blue)", opacity: ".15" }));
+  g.append(sv("path", { d, fill: "none", stroke: "var(--blue)", "stroke-width": 2 }));
+  const step = Math.ceil(points.length / 12);
+  points.forEach((p, i) => {
+    if (points.length <= 60) g.append(sv("circle", { cx: x(i), cy: y(p[1]), r: 3, fill: "var(--blue)" }));
+    if (i % step === 0) g.append(sv("text", { x: x(i), y: H - 8, "text-anchor": i === 0 ? "start" : "middle" }, label(p[0])));
+  });
+  /* Tota l'àrea del gràfic és la zona d'interacció: no cal encertar un punt de 3 px */
+  const line = sv("line", { class: "scrub", y1: Tp, y2: H - B, visibility: "hidden" }), dot = sv("circle", { r: 5, fill: "var(--blue)", stroke: "var(--card)", "stroke-width": 2, visibility: "hidden" });
+  const iMax = points.reduce((best, p, i) => p[1] > points[best][1] ? i : best, 0);
+  const read = el("div", { class: "readout" });
+  const show = i => {
+    read.replaceChildren(el("b", { textContent: fmt(points[i][1]) }), ` ${st.metric === "u" ? t("m_u").toLowerCase() : t("m_n").toLowerCase()}, ${longLabel(points[i][0])}`);
+    for (const e of [line, dot]) e.setAttribute("visibility", "visible");
+    line.setAttribute("x1", x(i)); line.setAttribute("x2", x(i)); dot.setAttribute("cx", x(i)); dot.setAttribute("cy", y(points[i][1]));
+  };
+  const nearest = cx => { const r = g.getBoundingClientRect(), px = (cx - r.left) / r.width * W; let bi = 0; points.forEach((_, i) => { if (Math.abs(x(i) - px) < Math.abs(x(bi) - px)) bi = i; }); return bi; };
+  let cur = iMax;
+  const hit = sv("rect", { x: 0, y: 0, width: W, height: H, fill: "transparent", tabindex: 0, role: "slider", "aria-label": t("timeline"), "aria-valuemin": 0, "aria-valuemax": points.length - 1 });
+  const go = i => { cur = Math.max(0, Math.min(points.length - 1, i)); show(cur); hit.setAttribute("aria-valuenow", cur); hit.setAttribute("aria-valuetext", read.textContent); };
+  hit.addEventListener("pointermove", e => go(nearest(e.clientX)));
+  hit.addEventListener("pointerdown", e => go(nearest(e.clientX)));
+  hit.addEventListener("keydown", e => { if (e.key === "ArrowRight") { go(cur + 1); e.preventDefault(); } if (e.key === "ArrowLeft") { go(cur - 1); e.preventDefault(); } if (e.key === "Home") go(0); if (e.key === "End") go(points.length - 1); });
+  g.append(line, dot, hit); g.removeAttribute("aria-hidden");
+  box.replaceChildren(read, g); go(iMax);
+}
+function paretoChart(id, entries) {
+  const box = $(id);
+  if (!entries.length) { box.replaceChildren(el("span", { class: "v", textContent: t("nodata") })); return; }
+  const tot = sum(entries.map(e => e[1])), top = entries.slice(0, 15), n = top.length;
+  const W = Math.max(760, n * 54, box.clientWidth - 4), H = 310, L = 90, R = 48, Tp = 12, B = 118, bw = (W - L - R) / n;
+  const ticks = niceTicks(Math.max(...top.map(e => e[1]))), mx = ticks[ticks.length - 1];
+  const y = c => Tp + (H - Tp - B) * (1 - c / mx), yp = p => Tp + (H - Tp - B) * (1 - p);
+  const g = sv("svg", { viewBox: `0 0 ${W} ${H}`, width: W, height: H, role: "img", "aria-label": top.map(e => `${e[0]}: ${fmt(e[1])}`).join("; ") });
+  for (const c of ticks) g.append(sv("line", { x1: L, x2: W - R, y1: y(c), y2: y(c), class: "grid-l" }), sv("text", { x: L - 6, y: y(c) + 4, "text-anchor": "end" }, fmt(c)));
+  for (let i = 0; i <= 4; i++) g.append(sv("text", { x: W - R + 6, y: yp(i / 4) + 4 }, `${i * 25} %`));
+  let acc = 0; const pts = [];
+  top.forEach((e, i) => {
+    acc += e[1]; const x0 = L + i * bw;
+    const r = sv("rect", { x: x0 + 4, y: y(e[1]), width: bw - 8, height: H - B - y(e[1]), fill: "var(--blue)", rx: 2 }); r.append(sv("title", {}, `${e[0]}: ${fmt(e[1])}`)); g.append(r);
+    const lab = e[0].length > 24 ? e[0].slice(0, 23) + "…" : e[0];
+    g.append(sv("text", { x: x0 + bw / 2, y: H - B + 12, transform: `rotate(-40 ${x0 + bw / 2} ${H - B + 12})`, "text-anchor": "end" }, lab));
+    pts.push([x0 + bw / 2, yp(acc / tot), acc / tot]);
+  });
+  /* L'acumulat es distingeix per la forma (línia discontínua i rombes), no només pel color */
+  g.append(sv("path", { d: pts.map((p, i) => `${i ? "L" : "M"}${p[0]},${p[1]}`).join(""), fill: "none", stroke: "var(--ink)", "stroke-width": 1.5, "stroke-dasharray": "5 4" }));
+  for (const p of pts) { const m = sv("rect", { x: p[0] - 3.5, y: p[1] - 3.5, width: 7, height: 7, fill: "var(--ink)", transform: `rotate(45 ${p[0]} ${p[1]})` }); m.append(sv("title", {}, `${fmt(p[2] * 100, 1)} %`)); g.append(m); }
+  box.replaceChildren(g, el("div", { class: "legend" }, el("span", {}, el("i", { style: "background:var(--blue)" }), t("c_inc")),
+    el("span", {}, el("i", { style: "background:var(--ink);transform:rotate(45deg) scale(.7)" }), `% ${t("cumul")}`)));
+}
+function heatTable(id, rowsKeys, colsKeys, cell, rowLabel, colLabel, mode = "abs") {
+  const rt = rowsKeys.map(r => sum(colsKeys.map(c => cell(r, c)))), ct = colsKeys.map(c => sum(rowsKeys.map(r => cell(r, c)))), all = sum(rt);
+  const shown = (r, c, i, j) => mode === "row" ? (rt[i] ? cell(r, c) / rt[i] : 0) : mode === "col" ? (ct[j] ? cell(r, c) / ct[j] : 0) : cell(r, c);
+  let mx = 0; rowsKeys.forEach((r, i) => colsKeys.forEach((c, j) => { mx = Math.max(mx, shown(r, c, i, j)); }));
+  const head = el("tr", {}, el("th"), ...colsKeys.map(c => el("th", { textContent: colLabel(c) })), el("th", { class: "tot", textContent: t("total") }));
+  const body = el("tbody", {}, ...rowsKeys.map((r, i) => el("tr", {}, el("th", { textContent: rowLabel(r) }),
+    ...colsKeys.map((c, j) => { const s = shown(r, c, i, j); return el("td", { style: heat(mx ? s / mx : 0), title: `${rowLabel(r)} · ${colLabel(c)}: ${fmt(cell(r, c))}`, textContent: s ? (mode === "abs" ? fmt(s) : fmt(s * 100, 0) + "%") : "·" }); }),
+    el("td", { class: "tot", textContent: fmt(rt[i]) }))),
+    el("tr", {}, el("th", { class: "tot", textContent: t("total") }), ...ct.map(n => el("td", { class: "tot", textContent: fmt(n) })), el("td", { class: "tot", textContent: fmt(all) })));
+  $(id).replaceChildren(el("table", { class: "heat" }, el("thead", {}, head), body));
+}
+
+const unit = () => (st.metric === "u" ? t("m_u") : t("m_n")).toLowerCase();
+function hlTop(id, m, label) {
+  const a = [...m].sort((x, y) => val(y[1]) - val(x[1]));
+  if (!a.length || !val(a[0][1])) return headline(id, []);
+  headline(id, t("hlTop")(label(a[0][0]), fmt(val(a[0][1])), pct(val(a[0][1]), sum(a.map(e => val(e[1])))), unit()));
+}
+
+/* ═════════════ Seccions ═════════════ */
+function repeaters(rows) {
+  const m = new Map();
+  for (const r of rows) if (/^INV-\d{5}$/.test(r.numero_dinventari)) { const a = m.get(r.numero_dinventari) || []; a.push(r); m.set(r.numero_dinventari, a); }
+  return [...m].filter(e => e[1].length > 1).sort((a, b) => b[1].length - a[1].length);
+}
+
+function vResum(rows) {
+  const U = rows.map(users), days = new Set(rows.map(r => r.data).filter(Boolean)), rep = repeaters(rows);
+  const delays = rows.map(r => r._delay).filter(d => d !== undefined);
+  const k = (n, l) => el("div", {}, el("span", { class: "num", textContent: n }), el("span", { textContent: l }));
+  $("kpis").replaceChildren(k(fmt(rows.length), t("k_inc")), k(fmt(sum(U)), t("k_users")), k(fmt(rows.length ? sum(U) / rows.length : 0, 2), t("k_mean")),
+    k(fmt(median(U)), t("k_med")), k(fmt(delays.length ? sum(delays) / delays.length : 0, 0), t("k_delay")), k(fmt(rep.length), t("k_rep")),
+    k(fmt(days.size), t("k_days")), k(fmt(days.size ? rows.length / days.size : 0, 2), t("k_perday")));
+
+  const I = t("ins"), out = [];
+  if (rows.length) {
+    const cat = sorted(group(rows, r => r.categoria_de_lavaria), 1)[0];
+    if (cat) out.push(I.topCat(v(cat[0]), pct(cat[1].n, rows.length)));
+    const dep = [...group(rows, r => r.departament)].sort((a, b) => b[1].u - a[1].u)[0];
+    if (dep) out.push(I.topDeptU(v(dep[0]), fmt(dep[1].u)));
+    const eq = [...group(rows, r => r.tipus_dequip)].filter(e => e[1].n >= 5).sort((a, b) => b[1].u / b[1].n - a[1].u / a[1].n)[0];
+    if (eq) out.push(I.worstEquip(v(eq[0]), fmt(eq[1].u / eq[1].n, 2)));
+    const mon = [...group(rows, r => r._mon)].sort((a, b) => b[1].n - a[1].n)[0];
+    if (mon) out.push(I.topMonth(t("months")[mon[0]], fmt(mon[1].n)));
+    const wd = [...group(rows, r => r._wd)].sort((a, b) => b[1].n - a[1].n)[0];
+    if (wd) out.push(I.topWd(t("wd")[wd[0]], pct(wd[1].n, rows.length)));
+    const probs = [...group(rows, r => r._probs)].map(e => [e[0], e[1].n]).sort((a, b) => b[1] - a[1]), totP = sum(probs.map(p => p[1]));
+    if (probs.length) out.push(I.topProb(pv(probs[0][0]), fmt(probs[0][1])));
+    let acc = 0, n80 = 0; for (const p of probs) { acc += p[1]; n80++; if (acc / totP >= .8) break; }
+    if (probs.length > 3) out.push(I.pareto(fmt(n80), fmt(probs.length), pct(acc, totP)));
+    if (rep.length) out.push(I.repeat(fmt(rep.length)));
+    if (delays.length) out.push(I.delay(fmt(sum(delays) / delays.length, 0)));
+    const foreign = rows.filter(r => r.idiomes.some(x => x !== "ca")).length;
+    if (foreign) out.push(I.foreign(pct(foreign, rows.length), fmt(new Set(rows.flatMap(r => r.idiomes)).size), fmt(rows.filter(r => r._multi).length)));
+  }
+  out.push(I.quality(pct(DADES.filter(r => r._fix).length, DADES.length), fmt(DADES.filter(r => !r.valida).length)));
+  $("insights").replaceChildren(...out.map(s => el("li", { textContent: s })));
+
+  bars("r-cat", sorted(group(rows, r => r.categoria_de_lavaria), 10), { label: v, filterKey: "cat" });
+  bars("r-dept", sorted(group(rows, r => r.departament), 11), { label: v, filterKey: "dept" });
+  bars("r-prob", sorted(group(rows, r => r._probs), 14), { label: pv, filterKey: "prob" });
+  hlTop("r-cat", group(rows, r => r.categoria_de_lavaria), v);
+  hlTop("r-dept", group(rows, r => r.departament), v);
+  hlTop("r-prob", group(rows, r => r._probs), pv);
+}
+
+function vDistribucio(rows) {
+  distTable("d-cat", group(rows, r => r.categoria_de_lavaria), "cat");
+  distTable("d-equip", group(rows, r => r.tipus_dequip), "equip");
+  distTable("d-dept", group(rows, r => r.departament), "dept");
+  distTable("d-prob", group(rows, r => r._probs), "prob", pv);
+  paretoChart("d-pareto", [...group(rows, r => r._probs)].map(e => [pv(e[0]), e[1].n]).sort((a, b) => b[1] - a[1]));
+  const uh = group(rows, r => users(r) || null), uk = [...uh.keys()].sort((a, b) => a - b);
+  cols("d-uhist", uk, k => uh.get(k).n, k => String(k));
+  headline("d-uhist", rows.length ? t("hlOne")(pct(rows.filter(r => users(r) === 1).length, rows.length)) : []);
+  const sg = group(rows, r => r._sev);
+  hlTop("d-sev", sg, k => t("sev")[k]);
+  bars("d-sev", [0, 1, 2, 3].map(k => [k, sg.get(k) || { n: 0, u: 0 }]), { label: k => t("sev")[k] });
+}
+
+function weekKey(iso) { const d = new Date(iso + "T12:00:00"); d.setDate(d.getDate() - (d.getDay() + 6) % 7); return d.toISOString().slice(0, 10); }
+function vTemporal(rows) {
+  const withDate = rows.filter(r => r.data);
+  const keyf = st.gran === "d" ? r => r.data : st.gran === "w" ? r => weekKey(r.data) : r => r.data.slice(0, 7);
+  const g = group(withDate, keyf), keys = [...g.keys()].sort();
+  const lab = st.gran === "m" ? k => `${t("mshort")[+k.slice(5, 7) - 1]} ${k.slice(2, 4)}` : k => `${+k.slice(8, 10)} ${t("mshort")[+k.slice(5, 7) - 1]}`;
+  const full = k => `${+k.slice(8, 10)} ${t("months")[+k.slice(5, 7) - 1]}`;
+  const longLab = st.gran === "m" ? k => t("monthOf")(`${t("months")[+k.slice(5, 7) - 1]} ${k.slice(0, 4)}`) : st.gran === "w" ? k => t("weekOf")(full(k)) : k => t("dayOf")(full(k));
+  const pts = keys.map(k => [k, val(g.get(k))]);
+  lineChart("t-line", pts, lab, longLab);
+  if (pts.length) { const top = pts.reduce((a, b) => b[1] > a[1] ? b : a); headline("t-line", t("hlPeak")(fmt(top[1]), unit(), longLab(top[0]))); } else headline("t-line", []);
+  hlTop("t-month", group(withDate, r => r._mon), k => t("months")[k].replace(/^./, c => c.toUpperCase()));
+  hlTop("t-wd", group(withDate, r => r._wd), k => t("wd")[k].replace(/^./, c => c.toUpperCase()));
+  document.querySelectorAll("#gran button").forEach(b => b.setAttribute("aria-pressed", b.dataset.g === st.gran));
+  const gm = group(withDate, r => r._mon), mk = [...gm.keys()].sort((a, b) => a - b);
+  cols("t-month", mk, k => val(gm.get(k)), k => t("mshort")[k], { title: k => t("months")[k] });
+  const gw = group(withDate, r => r._wd);
+  cols("t-wd", [0, 1, 2, 3, 4, 5, 6], k => gw.has(k) ? val(gw.get(k)) : 0, k => t("wdshort")[k], { title: k => t("wd")[k] });
+  const gx = group(withDate, r => `${r._wd}|${r._mon}`);
+  heatTable("t-heat", [0, 1, 2, 3, 4, 5, 6], mk, (w, m) => gx.has(`${w}|${m}`) ? val(gx.get(`${w}|${m}`)) : 0, w => t("wd")[w], m => t("mshort")[m]);
+  const gh = group(rows.filter(r => r._hour !== undefined), r => r._hour), hk = [...gh.keys()].sort((a, b) => a - b);
+  cols("t-hour", hk, k => val(gh.get(k)), k => `${k}h`);
+  { const a = [...gh].sort((x, y) => y[1].n - x[1].n)[0]; headline("t-hour", a ? t("hlHour")(a[0], pct(a[1].n, sum([...gh.values()].map(g => g.n)))) : []); }
+  const withDelay = rows.filter(r => r._delay !== undefined && r._delay >= 0);
+  headline("t-delay", withDelay.length ? t("hlLate")(pct(withDelay.filter(r => r._delay > 90).length, withDelay.length)) : []);
+  const bins = [7, 30, 60, 90, 120, 180, Infinity];
+  const gd = group(rows.filter(r => r._delay !== undefined && r._delay >= 0), r => bins.findIndex(b => r._delay <= b));
+  bars("t-delay", bins.map((_, i) => [i, gd.get(i) || { n: 0, u: 0 }]), { label: i => t("dbins")[i] });
+}
+
+function dimKeys(rows, d) {
+  const g = group(rows, r => r[d]);
+  return ORDERED.has(d) ? [...g.keys()].sort((a, b) => (a === "?") - (b === "?") || (a > b ? 1 : -1)) : [...g].sort((a, b) => b[1].n - a[1].n).map(e => e[0]);
+}
+function vCreuaments(rows) {
+  for (const [id, key] of [["x-row", "xr"], ["x-col", "xc"]]) {
+    const s = $(id); s.replaceChildren(...Object.entries(t("dims")).map(([k, l]) => el("option", { value: k, textContent: l, selected: k === st[key] })));
+  }
+  document.querySelectorAll("#x-mode button").forEach(b => b.setAttribute("aria-pressed", b.dataset.x === st.xm));
+  const rk = dimKeys(rows, st.xr).slice(0, 25), ck = dimKeys(rows, st.xc).slice(0, 14);
+  const g = group(rows, r => [].concat(r[st.xr]).flatMap(a => [].concat(r[st.xc]).map(b => `${a}|${b}`)));
+  if (!rk.length) { $("x-table").replaceChildren(el("span", { class: "v", textContent: t("nodata") })); return; }
+  heatTable("x-table", rk, ck, (a, b) => g.has(`${a}|${b}`) ? val(g.get(`${a}|${b}`)) : 0, DIMLABEL[st.xr], DIMLABEL[st.xc], st.xm);
+}
+
+function vLlocs(rows) {
+  const gf = group(rows, r => r._floor), fk = [...gf.keys()].sort((a, b) => (a === "?") - (b === "?") || (a > b ? 1 : -1));
+  cols("l-floor", fk, k => val(gf.get(k)), k => k === "?" ? "–" : k, { title: DIMLABEL._floor });
+  bars("l-space", sorted(group(rows, r => r._space), 12), { label: v });
+  bars("l-top", sorted(group(rows, r => r.ubicacio), 12));
+  hlTop("l-floor", gf, DIMLABEL._floor);
+  hlTop("l-space", group(rows, r => r._space), v);
+  hlTop("l-top", group(rows, r => r.ubicacio), x => x);
+  const rep = repeaters(rows);
+  const uniq = (a, f) => [...new Set(a.map(f))].join(", ");
+  $("l-rep").replaceChildren(rep.length ? el("table", {},
+    el("thead", {}, el("tr", {}, ...["r_inv", "r_n", "r_equip", "r_cats", "r_dept", "r_dates"].map(k => el("th", { textContent: t(k) })))),
+    el("tbody", {}, ...rep.map(([inv, a]) => el("tr", {},
+      el("td", {}, el("b", { textContent: inv })), el("td", { class: "n", textContent: a.length }),
+      el("td", {}, ...[...new Set(a.map(r => r.tipus_dequip))].map((x, i, all) => el("span", { class: all.length > 1 ? "tag t-fix" : "tag t-ok", textContent: v(x) }))),
+      el("td", { textContent: uniq(a, r => v(r.categoria_de_lavaria)) }), el("td", { textContent: uniq(a, r => v(r.departament)) }),
+      el("td", { textContent: a.map(r => r.data).sort().join(" · ") })))))
+    : el("span", { class: "v", textContent: t("nodata") }));
+  const gt = group(rows.filter(r => /\p{L}/u.test(r.contacte_del_tecnic_assignat)), r => r.contacte_del_tecnic_assignat);
+  const mx = Math.max(0, ...[...gt.values()].map(g => g.n)), none = rows.filter(r => !/\p{L}/u.test(r.contacte_del_tecnic_assignat)).length;
+  $("l-tech").replaceChildren(el("p", { textContent: t("techText")(fmt(gt.size), mx, fmt(none)) }));
+  if (mx > 1) { const d = el("div", { class: "bars", id: "l-tech-b" }); $("l-tech").append(d); bars("l-tech-b", sorted(gt, 10)); }
+}
+
+function vQualitat(rowsAll) {
+  const fixedFields = sum(rowsAll.map(r => Object.keys(r.trucs).length)), ok = rowsAll.filter(r => r.valida).length;
+  const k = (n, l) => el("div", {}, el("span", { class: "num", textContent: n }), el("span", { textContent: l }));
+  $("q-kpis").replaceChildren(k(fmt(rowsAll.length), t("q_rec")), k(fmt(rowsAll.filter(r => r._fix).length), t("q_fix")),
+    k(fmt(fixedFields), t("q_fields")), k(fmt(rowsAll.length - ok), t("q_bad")), k(pct(ok, rowsAll.length), t("q_pct")));
+  const gt = group(rowsAll, r => [...new Set(Object.values(r.trucs).flat())]);
+  bars("q-tricks", [...gt].map(e => [e[0], e[1].n]).sort((a, b) => b[1] - a[1]), { label: v, color: "var(--amber)" });
+  const gf = group(rowsAll, r => Object.keys(r.trucs));
+  bars("q-fields", FIELDS.map(f => [f, gf.has(f) ? Math.round(gf.get(f).n / rowsAll.length * 1000) / 10 : 0]).filter(e => e[1]).sort((a, b) => b[1] - a[1]),
+    { label: f => t("fields")[f], color: "var(--amber)" });
+  $("q-fields").querySelectorAll(".v").forEach(s => { s.textContent += " %"; });
+  const tricks = [...gt.keys()], cnt = new Map();
+  for (const r of rowsAll) for (const [f, ts] of Object.entries(r.trucs)) for (const x of new Set(ts)) cnt.set(`${f}|${x}`, (cnt.get(`${f}|${x}`) || 0) + 1);
+  heatTable("q-matrix", FIELDS.filter(f => gf.has(f)), tricks, (f, x) => cnt.get(`${f}|${x}`) || 0, f => t("fields")[f], v);
+  bars("q-reasons", [...group(rowsAll, r => r.errors.map(e => e.replace(/\s*\(.*\)/, "")))].map(e => [e[0], e[1].n]).sort((a, b) => b[1] - a[1]), { color: "var(--red)" });
+  bars("q-warn", [...group(rowsAll, r => r.avisos)].map(e => [e[0], e[1].n]).sort((a, b) => b[1] - a[1]));
+  bars("q-lang", sorted(group(rowsAll.filter(r => r.valida), r => r.idiomes), 20), { label: lname, filterKey: "lang", metric: false });
+  const ex = $("q-examples"); ex.replaceChildren();
+  for (const x of tricks.sort()) {
+    let found = null;
+    for (const r of rowsAll) { const f = FIELDS.find(f => (r.trucs[f] || []).includes(x) && r.original[f].length < 160); if (f) { found = [r, f]; break; } }
+    if (!found) continue;
+    const [r, f] = found;
+    ex.append(el("div", { class: "example" }, el("b", { textContent: v(x) }),
+      el("div", {}, el("code", { textContent: `${t("before")}: ${r.original[f]}` }), el("div", { textContent: `${t("after")}: ${r[f]}` }),
+        el("a", { href: "#", textContent: `${t("incident")} #${r.id} · ${t("fields")[f]}`, onclick: e => { e.preventDefault(); detail(r, DADES); } }))));
+  }
+  const disc = rowsAll.filter(r => !r.valida);
+  $("q-disc").replaceChildren(disc.length ? el("table", {}, el("thead", {}, el("tr", {}, el("th", { textContent: "#" }), el("th", { textContent: t("date") }), el("th", { textContent: t("errors") }))),
+    el("tbody", {}, ...disc.map(r => el("tr", { style: "cursor:pointer", onclick: () => detail(r, disc) },
+      el("td", { textContent: r.id }), el("td", { textContent: r.original.data_de_la_incidencia }), el("td", { textContent: r.errors.join(" · ") })))))
+    : el("span", { class: "v", textContent: t("nodata") }));
+}
+
+/* ═════════════ Explorador ═════════════ */
+const COLS = [["id", "#"], ["data", "date"], ["departament", "department"], ["tipus_dequip", "equipment"], ["categoria_de_lavaria", "category"],
+  ["ubicacio", "location"], ["usuaris", "users"], ["idioma", "language"], ["descripcio_de_la_incidencia", "description"], ["_st", "status"]];
+function sortRows(rows) {
+  const k = st.sort, d = st.dir;
+  const get = r => k === "id" ? +r.id : k === "usuaris" ? users(r) : k === "_st" ? (r.valida ? 0 : 2) + (r._fix ? 1 : 0) : (CATEG.includes(k) ? v(r[k]) : r[k]) || "";
+  return [...rows].sort((a, b) => { const x = get(a), y = get(b); return (x > y ? 1 : x < y ? -1 : 0) * d; });
+}
+let currentRows = [];
+function vExplorador(rows) {
+  rows = sortRows(rows); currentRows = rows;
+  $("count").textContent = t("shown")(fmt(rows.length), fmt(DADES.length));
+  $("ex-head").replaceChildren(...COLS.map(([k, l]) => el("th", { "aria-sort": st.sort === k ? (st.dir > 0 ? "ascending" : "descending") : "none" },
+    el("button", { type: "button", textContent: (l === "#" ? "#" : t(l)) + (st.sort === k ? (st.dir > 0 ? " ▲" : " ▼") : ""),
+      onclick: () => { st.dir = st.sort === k ? -st.dir : 1; st.sort = k; render(); } }))));
+  const pages = Math.max(1, Math.ceil(rows.length / st.pp)); st.page = Math.min(st.page, pages);
+  const body = $("rows"); body.replaceChildren();
+  if (!rows.length) body.append(el("tr", {}, el("td", { colSpan: COLS.length, class: "empty", textContent: t("noresults") })));
+  for (const r of rows.slice((st.page - 1) * st.pp, st.page * st.pp)) {
+    const d = st.tr && r._probs.length ? trDesc(r) : r.descripcio_de_la_incidencia, s = el("td");
+    s.append(r.valida ? el("span", { class: "tag t-ok", textContent: t("ok") }) : el("span", { class: "tag t-bad", textContent: t("bad") }));
+    if (r._fix) s.append(el("span", { class: "tag t-fix", textContent: t("fix") }));
+    body.append(el("tr", { tabIndex: 0, onclick: () => detail(r, rows), onkeydown: e => { if (e.key === "Enter") detail(r, rows); } },
+      el("td", { textContent: r.id }), el("td", { textContent: r.data || r.data_de_la_incidencia }), el("td", { textContent: v(r.departament) }),
+      el("td", { textContent: v(r.tipus_dequip) }), el("td", { textContent: v(r.categoria_de_lavaria) }), el("td", { textContent: r.ubicacio }),
+      el("td", { class: "n", textContent: r.usuaris ?? "" }), el("td", { textContent: r.idiomes.map(lname).join(", ") }),
+      el("td", { class: "desc", textContent: d.length > 110 ? d.slice(0, 110) + "…" : d }), s));
+  }
+  $("page").textContent = t("page")(st.page, pages);
+  $("prev").disabled = st.page <= 1; $("next").disabled = st.page >= pages;
+}
+function download(name, text, type) {
+  const a = el("a", { href: URL.createObjectURL(new Blob([text], { type })), download: name }); document.body.append(a); a.click(); a.remove();
+}
+const csvCell = s => `"${String(s ?? "").replace(/"/g, '""')}"`;
+function exportCSV() {
+  const head = ["id", "valida", ...FIELDS, "idiomes", "problemes_" + lang, "errors", "correccions"];
+  const lines = currentRows.map(r => [r.id, r.valida ? "1" : "0", ...FIELDS.map(f => r[f]), r.idiomes.join(" "), trDesc(r), r.errors.join("; "),
+    Object.entries(r.trucs).map(([f, x]) => `${f}: ${x.join(", ")}`).join("; ")].map(csvCell).join(","));
+  download("incidencies_filtrades.csv", "\ufeff" + [head.join(","), ...lines].join("\r\n"), "text/csv;charset=utf-8");
+}
+function exportJSON() {
+  download("incidencies_filtrades.json", JSON.stringify(currentRows.map(r => { const o = {}; for (const k in r) if (!k.startsWith("_")) o[k] = r[k]; return o; }), null, 1), "application/json");
+}
+
+/* ═════════════ Detall ═════════════ */
+let detailList = [], detailIdx = 0;
+function detail(r, list) {
+  detailList = list || [r]; detailIdx = Math.max(0, detailList.indexOf(r));
+  $("d-title").textContent = `${t("incident")} #${r.id}`;
+  $("d-prev").disabled = detailIdx <= 0; $("d-next").disabled = detailIdx >= detailList.length - 1;
+  const b = $("d-body"); b.replaceChildren();
+  if (r.errors.length) b.append(el("div", { class: "msg t-bad" }, el("b", { textContent: t("errors") + ": " }), r.errors.join(" · ")));
+  if (r.avisos.length) b.append(el("div", { class: "msg t-fix" }, el("b", { textContent: t("warnLabel") + ": " }), r.avisos.join(" · ")));
+  const tb = el("tbody");
+  for (const [f, label] of Object.entries(t("fields"))) {
+    const cell = el("td", {}, el("div", { textContent: CATEG.includes(f) ? v(r[f]) : r[f], style: "white-space:pre-wrap" }));
+    if (r.trucs[f]) {
+      for (const k of r.trucs[f]) cell.append(el("span", { class: "tag t-fix", textContent: v(k) }));
+      cell.append(el("div", { class: "orig", textContent: `${t("origLabel")} ${r.original[f].slice(0, 400)}${r.original[f].length > 400 ? "…" : ""}` }));
+    }
+    if (f === "descripcio_de_la_incidencia" && r[f]) {
+      if (r._probs.length && r.idiomes.some(x => x !== lang))
+        cell.append(el("div", { class: "msg t-info", style: "margin:6px 0" }, el("b", { textContent: t("translation") + ": " }), trDesc(r)));
+      for (const x of r.idiomes) cell.append(el("span", { class: "tag t-info", textContent: lname(x) }));
+      cell.append(" ",
+        el("a", { href: "https://translate.google.com/?sl=auto&tl=" + lang + "&op=translate&text=" + encodeURIComponent(r[f].slice(0, 1500)), target: "_blank", rel: "noopener noreferrer", textContent: t("translate") }));
+    }
+    tb.append(el("tr", {}, el("td", { textContent: label }), cell));
+  }
+  b.append(el("table", {}, tb));
+  if (!$("detail").open) $("detail").showModal();
+}
+
+/* ═════════════ Control general ═════════════ */
+function fillSelect(id, values, label, cur) {
+  const s = $(id); s.replaceChildren(el("option", { value: "", textContent: t("all") }));
+  for (const x of values) s.append(el("option", { value: x, textContent: label(x), selected: x === cur }));
+}
+function syncControls() {
+  const valid = DADES.filter(r => r.valida);
+  const uniq = f => [...group(valid, f)].sort((a, b) => b[1].n - a[1].n).map(x => x[0]);
+  fillSelect("f-dept", uniq(r => r.departament), v, st.dept);
+  fillSelect("f-equip", uniq(r => r.tipus_dequip), v, st.equip);
+  fillSelect("f-cat", uniq(r => r.categoria_de_lavaria), v, st.cat);
+  fillSelect("f-lang", uniq(r => r.idiomes), lname, st.lang);
+  fillSelect("f-prob", uniq(r => r._probs), pv, st.prob);
+  $("tr").checked = st.tr;
+  const s = $("f-status"); s.replaceChildren();
+  for (const [x, k] of [["valid", "st_valid"], ["fixed", "st_fixed"], ["bad", "st_bad"], ["any", "st_any"]]) s.append(el("option", { value: x, textContent: t(k), selected: x === st.status }));
+  $("q").value = st.q; $("f-from").value = st.from; $("f-to").value = st.to; $("f-umin").value = st.umin; $("f-umax").value = st.umax;
+  document.querySelectorAll("[data-metric]").forEach(b => b.setAttribute("aria-pressed", b.dataset.metric === st.metric));
+  $("pp").value = String(st.pp);
+}
+function chips() {
+  const c = $("chips"); c.replaceChildren(el("span", { textContent: t("active") }));
+  const defs = [["q", t("search"), x => `“${x}”`], ["dept", t("department"), v], ["equip", t("equipment"), v], ["cat", t("category"), v], ["prob", t("problem"), pv], ["lang", t("language"), lname],
+    ["status", t("status"), x => t({ valid: "st_valid", fixed: "st_fixed", bad: "st_bad", any: "st_any" }[x])], ["from", t("from"), x => x], ["to", t("to"), x => x], ["umin", t("umin"), x => x], ["umax", t("umax"), x => x]];
+  let any = false;
+  for (const [k, l, f] of defs) if (st[k] && st[k] !== DEF[k]) {
+    any = true;
+    c.append(el("span", { class: "chip" }, `${l}: ${f(st[k])}`, el("button", { type: "button", "aria-label": "×", textContent: "×", onclick: () => { st[k] = DEF[k]; st.page = 1; syncControls(); render(); } })));
+  }
+  if (!any) c.append(el("span", { textContent: t("none") }));
+}
+function tabs() {
+  if (!$("tabs").children.length || $("tabs").dataset.lang !== lang) {
+    $("tabs").dataset.lang = lang;
+    $("tabs").replaceChildren(...VIEWS.map(k => {
+      const a = el("a", { href: "#" + k, onclick: e => { e.preventDefault(); go(k); } });
+      a.innerHTML = `<svg aria-hidden="true"><use href="#i-${k}"/></svg>`;   // icona fixa, sense dades
+      a.append(el("span", { textContent: t("tabs")[k] }));
+      const ch = document.createElementNS(SVG, "svg"); ch.setAttribute("class", "chev"); ch.setAttribute("width", "14"); ch.setAttribute("height", "14"); ch.setAttribute("aria-hidden", "true");
+      ch.innerHTML = '<use href="#i-next"/>'; a.append(ch);
+      return a;
+    }));
+  }
+  $("tabs").querySelectorAll("a").forEach((a, i) => a.setAttribute("aria-current", VIEWS[i] === st.view ? "page" : "false"));
+  VIEWS.forEach(k => $("v-" + k).classList.toggle("on", k === st.view));
+  $("view-title").textContent = t("tabs")[st.view];
+  $("view-sub").textContent = t("viewSub")[st.view];
+  document.title = `${t("tabs")[st.view]} · ${t("title")}`;
+  const valid = DADES.filter(r => r.valida), days = new Set(valid.map(r => r.data).filter(Boolean)).size;
+  $("side-stats").replaceChildren(...t("sideStats")(fmt(valid.length), fmt(days)).map(x => Array.isArray(x) ? el("b", { textContent: x[0] }) : x));
+  const n = ["dept", "equip", "cat", "prob", "lang", "from", "to", "umin", "umax"].filter(k => st[k]).length + (st.status !== DEF.status ? 1 : 0);
+  $("fcount").hidden = !n; $("fcount").textContent = n;
+}
+function i18n() {
+  document.documentElement.lang = lang; document.title = t("title");
+  document.querySelectorAll("[data-i]").forEach(e => { e.textContent = t(e.dataset.i); });
+  document.querySelectorAll("[data-lang]").forEach(b => b.setAttribute("aria-pressed", b.dataset.lang === lang));
+  $("q").placeholder = t("searchPh"); $("q").setAttribute("aria-label", t("search"));
+  $("open-menu").setAttribute("aria-label", lang === "en" ? "More" : lang === "es" ? "Más" : "Més");
+  for (const [id, l] of [["d-prev", "‹"], ["d-next", "›"], ["dec-prev", "‹"], ["dec-next", "›"]]) $(id).setAttribute("aria-label", l);
+}
+const RENDER = { resum: vResum, distribucio: vDistribucio, temporal: vTemporal, creuaments: vCreuaments, llocs: vLlocs, qualitat: vQualitat, explorador: vExplorador };
+function render(all = false) {
+  tabs(); chips();
+  const rows = filtered();
+  for (const k of all ? VIEWS : [st.view]) RENDER[k](k === "qualitat" ? filtered({ status: "any" }) : rows);
+}
+const compact = () => matchMedia("(max-width: 860px)").matches;
+let inList = true;             // a mida compacta: es veu la llista de seccions (com l'arrel d'una app d'iPhone)
+const readHash = () => { try { return location.hash.slice(1); } catch (e) { return ""; } };
+function setHash(h) {          // si la pàgina és dins d'un marc aïllat, canviar l'adreça pot estar prohibit: no passa res
+  try { history.replaceState(null, "", h ? "#" + h : location.pathname + location.search); } catch (e) {}
+}
+function layout() { document.body.classList.toggle("in-view", !compact() || !inList); }
+function go(k) {
+  st.view = k; inList = false; setHash(k); layout(); render();
+  window.scrollTo(0, 0);
+  const h = $("view-title"); h.setAttribute("tabindex", "-1"); h.focus({ preventScroll: true });
+}
+function route() {
+  const h = readHash();
+  if (VIEWS.includes(h)) { st.view = h; inList = false; }
+  layout(); render();
+}
+matchMedia("(max-width: 860px)").addEventListener("change", () => { layout(); render(); });
+
+/* Esdeveniments */
+let tmr;
+$("q").addEventListener("input", e => { clearTimeout(tmr); tmr = setTimeout(() => { st.q = e.target.value; st.page = 1; render(); }, 150); });
+for (const [id, k] of [["f-dept", "dept"], ["f-equip", "equip"], ["f-cat", "cat"], ["f-prob", "prob"], ["f-lang", "lang"], ["f-status", "status"], ["f-from", "from"], ["f-to", "to"], ["f-umin", "umin"], ["f-umax", "umax"]])
+  $(id).addEventListener("change", e => { st[k] = e.target.value; st.page = 1; render(); });
+document.querySelectorAll("[data-metric]").forEach(b => b.addEventListener("click", () => { st.metric = b.dataset.metric; syncControls(); render(); }));
+document.querySelectorAll("#gran button").forEach(b => b.addEventListener("click", () => { st.gran = b.dataset.g; render(); }));
+document.querySelectorAll("#x-mode button").forEach(b => b.addEventListener("click", () => { st.xm = b.dataset.x; render(); }));
+$("x-row").addEventListener("change", e => { st.xr = e.target.value; render(); });
+$("x-col").addEventListener("change", e => { st.xc = e.target.value; render(); });
+$("back").addEventListener("click", () => { inList = true; setHash(""); layout(); window.scrollTo(0, 0); });
+$("open-filters").addEventListener("click", () => { const d = $("filters"); if (d.open) return d.close(); $("menu").close(); compact() ? d.showModal() : d.show(); });
+$("f-done").addEventListener("click", () => $("filters").close());
+$("open-menu").addEventListener("click", () => { const d = $("menu"); if (d.open) return d.close(); $("filters").close(); d.show(); });
+for (const id of ["filters", "menu"]) {
+  $(id).addEventListener("keydown", e => { if (e.key === "Escape") $(id).close(); });
+  $(id).addEventListener("click", e => { if (e.target === e.currentTarget && $(id).open) { const r = $(id).getBoundingClientRect(); if (e.clientY < r.top || e.clientY > r.bottom || e.clientX < r.left || e.clientX > r.right) $(id).close(); } });
+}
+document.addEventListener("pointerdown", e => {    // un popover es tanca en tocar fora (popovers.md)
+  for (const id of ["filters", "menu"]) { const d = $(id); if (d.open && !d.contains(e.target) && !e.target.closest("#open-filters, #open-menu")) d.close(); }
+});
+$("reset").addEventListener("click", () => { Object.assign(st, DEF, { page: 1 }); syncControls(); render(); });
+$("tr").addEventListener("change", e => { st.tr = e.target.checked; render(); });
+$("pp").addEventListener("change", e => { st.pp = +e.target.value; st.page = 1; render(); });
+$("prev").addEventListener("click", () => { st.page--; render(); });
+$("next").addEventListener("click", () => { st.page++; render(); });
+$("exp-csv").addEventListener("click", exportCSV);
+$("exp-json").addEventListener("click", exportJSON);
+$("print").addEventListener("click", () => { $("menu").close(); render(true); setTimeout(() => window.print(), 100); });
+$("d-close").addEventListener("click", () => $("detail").close());
+$("d-prev").addEventListener("click", () => detail(detailList[detailIdx - 1], detailList));
+$("d-next").addEventListener("click", () => detail(detailList[detailIdx + 1], detailList));
+$("detail").addEventListener("click", e => { if (e.target === e.currentTarget) e.currentTarget.close(); });
+$("detail").addEventListener("keydown", e => { if (e.key === "ArrowLeft" && !$("d-prev").disabled) $("d-prev").click(); if (e.key === "ArrowRight" && !$("d-next").disabled) $("d-next").click(); });
+document.querySelectorAll("[data-lang]").forEach(b => b.addEventListener("click", () => {  // idioma de la interfície
+  lang = b.dataset.lang; try { localStorage.setItem("inc-lang", lang); } catch (e) {}
+  i18n(); syncControls(); render();
+}));
+window.addEventListener("hashchange", route);
+
+/* ═════════════ Peça característica: el descodificador ═════════════ */
+const DEC = (() => {
+  const prefer = ["binari", "octal", "hexadecimal", "base64", "Morse", "entitats HTML", "text zalgo", "Unicode estilitzat", "homoglifs ciríl·lics", "caràcters invisibles", "seqüències d'escapament", "emojis", "cometes/brossa", "majúscules/signes"];
+  const out = [];
+  for (const x of prefer) {
+    let best = null;
+    for (const f of ["ubicacio", "tipus_dequip", "departament", "categoria_de_lavaria", "descripcio_de_la_incidencia", "numero_dinventari", "usuari_afectat", "contacte_del_tecnic_assignat"]) {
+      best = (r => r && [r, f])(DADES.find(r => r.valida && (r.trucs[f] || []).includes(x) && r.original[f].length < 140 && r[f].length < 60 && r.original[f] !== r[f]));
+      if (best) break;
+    }
+    if (best) out.push([x, ...best]);
+  }
+  return out;
+})();
+let decI = 0;
+function decoder(animate) {
+  if (!DEC.length) return;
+  const [x, r, f] = DEC[decI];
+  $("dec-kicker").textContent = t("decKicker")(x, t("fields")[f].toLowerCase(), r.id);
+  $("dec-raw").textContent = r.original[f];
+  $("dec-trick").textContent = v(x);
+  const c = $("dec-clean"); c.textContent = CATEG.includes(f) ? v(r[f]) : r[f];
+  c.classList.remove("anim"); if (animate) { void c.offsetWidth; c.classList.add("anim"); }
+  $("dec-meta").textContent = t("decMeta")(v(x));
+  $("dec-count").textContent = t("decCount")(decI + 1, DEC.length);
+}
+$("dec-prev").addEventListener("click", () => { decI = (decI - 1 + DEC.length) % DEC.length; decoder(true); });
+$("dec-next").addEventListener("click", () => { decI = (decI + 1) % DEC.length; decoder(true); });
+function pipeline() {
+  const tot = DADES.length, bad = DADES.filter(r => !r.valida).length, fixok = DADES.filter(r => r.valida && r._fix).length, clean = tot - bad - fixok;
+  $("n-total").textContent = fmt(tot); $("n-clean").textContent = fmt(clean); $("n-fixok").textContent = fmt(fixok); $("n-bad").textContent = fmt(bad);
+  $("pipe-bar").replaceChildren(...[[clean, "var(--ok)"], [fixok, "var(--fix)"], [bad, "var(--bad)"]].map(([n, c]) => el("i", { style: `flex:${n} 0 ${n ? 3 : 0}px;background:${c}`, title: fmt(n) })));
+  $("pipe-bar").setAttribute("aria-label", `${t("pClean")}: ${fmt(clean)}; ${t("pFixed")}: ${fmt(fixok)}; ${t("discarded")}: ${fmt(bad)}`);
+}
+const _vResum = vResum;
+vResum = function (rows) { _vResum(rows); pipeline(); decoder(false); };
+RENDER.resum = vResum;
+(function backdrop() {
+  const raw = [];
+  for (const r of DADES) for (const [f, ts] of Object.entries(r.trucs))
+    if (ts.some(x => ["binari", "hexadecimal", "octal", "base64", "entitats HTML", "Morse"].includes(x)) && r.original[f].length < 220) raw.push(r.original[f]);
+  $("backdrop").textContent = raw.slice(0, 160).join("   ");
+})();
+i18n(); syncControls(); route(); if (st.view === "resum") decoder(true);
+</script>
+</body>
+</html>
