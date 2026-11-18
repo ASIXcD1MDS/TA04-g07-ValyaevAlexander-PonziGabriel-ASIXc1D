@@ -4,8 +4,8 @@
 ==============================================================================
 DASHBOARD DE ANÁLISIS DE INCIDENCIAS XML (ASIXc TA04 - Parte 3)
 ==============================================================================
-Archivo: procesar_xml.py
-Descripción: Lee 'incidencies.xml' en streaming (iterparse), sanea texto
+Archivo: src/procesar_xml.py
+Descripción: Lee 'data/incidencies.xml' en streaming (iterparse), sanea texto
              ofuscado (Mojibake, octal, Zalgo, homóglifos, Base64, hex, HTML),
              filtra registros erróneos y muestra un informe ejecutivo limpio
              con tablas alineadas mediante cajas Unicode en la terminal.
@@ -537,7 +537,7 @@ def mostrar_informe(res, nombre_archivo):
     borde_doble = "═" * (ANCHO_CAJA - 2)
     print(f"\n  {CIAN}╔{borde_doble}╗{RESET}")
     print(f"  {CIAN}║{RESET} {NEGRITA}{BLANCO}{ajustar_col('PANEL DE ANÁLISIS DE INCIDENCIAS TIC Y AUDIOVISUALES (ASIXc TA04)', ANCHO_CAJA - 4)}{RESET} {CIAN}║{RESET}")
-    sub = f"Fuente: {os.path.basename(nombre_archivo)}   |   Fecha informe: {HOY.strftime('%d/%m/%Y %H:%M')}"
+    sub = f"Fuente: {nombre_archivo}   |   Fecha informe: {HOY.strftime('%d/%m/%Y %H:%M')}"
     print(f"  {CIAN}║{RESET} {GRIS}{ajustar_col(sub, ANCHO_CAJA - 4)}{RESET} {CIAN}║{RESET}")
     print(f"  {CIAN}╚{borde_doble}╝{RESET}")
 
@@ -769,15 +769,15 @@ def mostrar_informe(res, nombre_archivo):
 if __name__ == "__main__":
     if len(sys.argv) > 1:
         archivo_xml = sys.argv[1]
-    elif os.path.exists("incidencies.xml"):
-        archivo_xml = "incidencies.xml"
+    elif os.path.exists("data/incidencies.xml"):
+        archivo_xml = "data/incidencies.xml"
     else:
-        archivo_xml = "Incidencies.xml"
+        archivo_xml = "data/Incidencies.xml"
 
     try:
         resultado = procesar_xml(archivo_xml)
         mostrar_informe(resultado, archivo_xml)
     except FileNotFoundError:
-        print(f"{ROJO}[-] Error: No se encontró '{archivo_xml}'. Ejecuta primero 'csv_to_xml.py'.{RESET}")
+        print(f"{ROJO}[-] Error: No se encontró '{archivo_xml}'. Ejecuta primero 'python3 src/csv_to_xml.py'.{RESET}")
     except ET.ParseError as err:
         print(f"{ROJO}[-] Error de sintaxis en el XML '{archivo_xml}': {err}{RESET}")

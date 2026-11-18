@@ -857,7 +857,7 @@ def exportar_json(registres, ruta):
 def exportar_web(registres, ruta_html):
     # Escapar "</" perquè cap dada pugui tancar l'etiqueta <script>
     blob = json.dumps([_per_json(r) for r in registres], ensure_ascii=False).replace("</", "<\\/")
-    plantilla_ruta = os.path.join(os.path.dirname(os.path.abspath(__file__)), "plantilla.html")
+    plantilla_ruta = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "web", "plantilla.html")
     if not os.path.exists(plantilla_ruta):
         sys.exit("Falta plantilla.html: ha d'estar a la mateixa carpeta que incidencies.py.")
     with open(plantilla_ruta, encoding="utf-8") as f:
@@ -870,7 +870,7 @@ def exportar_web(registres, ruta_html):
 
 
 def obrir_web(registres):
-    ruta = os.path.abspath(exportar_web(registres, "informe.html"))
+    ruta = os.path.abspath(exportar_web(registres, "web/informe.html"))
     print(f"{C.VERD}Panell web generat:{C.R} {ruta}")
     try:
         webbrowser.open("file://" + ruta)
@@ -986,8 +986,8 @@ def menu(registres):
                     print(f"  {C.VERM}#{r['id']:>5}{C.R}  {'; '.join(r['errors'])}")
             pausa()
         elif op == "12":
-            a = exportar_csv(sel, "incidencies_netes.csv")
-            b = exportar_json(sel, "incidencies_netes.json")
+            a = exportar_csv(sel, "data/incidencies_netes.csv")
+            b = exportar_json(sel, "data/incidencies_netes.json")
             print(f"  {C.VERD}Exportat:{C.R} {os.path.abspath(a)}\n  {C.VERD}Exportat:{C.R} {os.path.abspath(b)}")
             pausa()
         elif op == "13":
@@ -1022,7 +1022,7 @@ def main():
     if os.name == "nt":
         os.system("")            # activa els colors ANSI a la consola de Windows
 
-    ruta = args.fitxer or args.fitxer_pos or ("incidencies.xml" if os.path.exists("incidencies.xml") else "Incidencies.xml")
+    ruta = args.fitxer or args.fitxer_pos or ("data/incidencies.xml" if os.path.exists("data/incidencies.xml") else "data/Incidencies.xml")
     if not os.path.exists(ruta):
         sys.exit(f"No trobo el fitxer {ruta}. Indica'l amb -f RUTA.")
 
