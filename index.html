@@ -1,11 +1,269 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ca">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gestió d'Incidències TIC — ASIXc1D (Grup 07)</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --border: #334155;
+      --text: #f1f5f9;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+      --accent-hover: #0284c7;
+      --ok: #22c55e;
+      --warn: #f59e0b;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      padding: 2rem 1rem;
+    }
+    .container { max-width: 1120px; margin: 0 auto; }
+    header {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.75rem;
+      margin-bottom: 1.5rem;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+    }
+    header h1 { font-size: 1.5rem; color: var(--accent); }
+    header p { color: var(--muted); font-size: 0.95rem; margin-top: 0.25rem; }
+    .nav-links { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+    .btn {
+      text-decoration: none;
+      background: var(--accent);
+      color: #0f172a;
+      font-weight: 600;
+      padding: 0.55rem 1rem;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      transition: background 0.2s;
+    }
+    .btn:hover { background: var(--accent-hover); color: #fff; }
+    .btn-sec {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .btn-sec:hover { background: var(--border); }
+
+    .kpis {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .kpi-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.25rem;
+    }
+    .kpi-label { color: var(--muted); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.04em; }
+    .kpi-value { font-size: 1.8rem; font-weight: 700; margin-top: 0.35rem; color: var(--ok); }
+    .kpi-sub { font-size: 0.85rem; color: var(--muted); margin-top: 0.2rem; }
+
+    .panel {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+    }
+    .panel-header {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+    input[type="search"] {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 0.55rem 0.9rem;
+      border-radius: 8px;
+      min-width: 260px;
+      font-size: 0.9rem;
+    }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    th, td {
+      text-align: left;
+      padding: 0.75rem;
+      border-bottom: 1px solid var(--border);
+    }
+    th { color: var(--accent); font-weight: 600; white-space: nowrap; }
+    tr:hover td { background: rgba(56, 189, 248, 0.06); }
+    .badge {
+      display: inline-block;
+      padding: 0.15rem 0.55rem;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      background: rgba(56, 189, 248, 0.15);
+      color: var(--accent);
+    }
+    #estat { color: var(--muted); font-size: 0.9rem; margin-bottom: 0.75rem; }
+    footer {
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.85rem;
+      margin-top: 2rem;
+    }
+  </style>
 </head>
 <body>
-    
+  <div class="container">
+    <header>
+      <div>
+        <h1>Panel d'Incidències TIC i Audiovisuals — TA04</h1>
+        <p>ASIXc1D · Grup 07 (Alexander Valyaev &amp; Gabriel Ponzi)</p>
+      </div>
+      <nav class="nav-links">
+        <a class="btn" href="web/informe.html">Veure Informe HTML</a>
+        <a class="btn btn-sec" href="data/incidencies_netes.json" target="_blank">JSON Net</a>
+        <a class="btn btn-sec" href="data/incidencies.xml" target="_blank">XML</a>
+        <a class="btn btn-sec" href="https://github.com/ASIXc1DMDS/TA04-g07-ValyaevAlexander-PonziGabriel-ASIXc1D" target="_blank">Repositori GitHub</a>
+      </nav>
+    </header>
+
+    <section class="kpis">
+      <div class="kpi-card">
+        <div class="kpi-label">Incidències Vàlides</div>
+        <div class="kpi-value" id="kpi-total">—</div>
+        <div class="kpi-sub">Registres depurats</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Usuaris Afectats</div>
+        <div class="kpi-value" id="kpi-afectats" style="color: var(--accent);">—</div>
+        <div class="kpi-sub" id="kpi-mitjana">Mitjana: — per incidència</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Categoria Principal</div>
+        <div class="kpi-value" id="kpi-cat" style="color: var(--warn); font-size: 1.35rem;">—</div>
+        <div class="kpi-sub" id="kpi-cat-sub">—</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Departament més afectat</div>
+        <div class="kpi-value" id="kpi-dep" style="color: var(--text); font-size: 1.35rem;">—</div>
+        <div class="kpi-sub" id="kpi-dep-sub">—</div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-header">
+        <h2>Registres d'Incidències (Mostra interactiva)</h2>
+        <input type="search" id="cercador" placeholder="Filtrar per departament, equip, ubicació..." />
+      </div>
+      <p id="estat">Carregant dades des de <code>data/incidencies_netes.json</code>...</p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Data</th>
+              <th>Departament</th>
+              <th>Equip</th>
+              <th>Ubicació</th>
+              <th>Inventari</th>
+              <th>Categoria</th>
+              <th>Afectats</th>
+            </tr>
+          </thead>
+          <tbody id="taula-cos"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <footer>
+      Projecte TA04 · Programació i Llenguatges de Marques (ASIXc1D)
+    </footer>
+  </div>
+
+  <script>
+    let registres = [];
+
+    function camp(obj, claus, defecte = "—") {
+      for (const c of claus) {
+        if (obj[c] !== undefined && obj[c] !== null && String(obj[c]).trim() !== "") {
+          return obj[c];
+        }
+      }
+      return defecte;
+    }
+
+    function topFrequencia(llista) {
+      const comptador = {};
+      for (const item of llista) {
+        comptador[item] = (comptador[item] || 0) + 1;
+      }
+      const ordenat = Object.entries(comptador).sort((a, b) => b[1] - a[1]);
+      return ordenat[0] || ["—", 0];
+    }
+
+    function renderTaula(dades) {
+      const cos = document.getElementById("taula-cos");
+      const mostra = dades.slice(0, 50);
+      cos.innerHTML = mostra.map(r => `
+        <tr>
+          <td>${camp(r, ["data", "fecha", "data_de_la_incidencia"])}</td>
+          <td>${camp(r, ["departament", "departamento"])}</td>
+          <td>${camp(r, ["tipus_equip", "tipo_equipo", "tipus_dequip", "equip"])}</td>
+          <td>${camp(r, ["ubicacio", "ubicacion"])}</td>
+          <td><code>${camp(r, ["inventari", "inventario", "numero_dinventari"])}</code></td>
+          <td><span class="badge">${camp(r, ["categoria", "categoria_de_lavaria"])}</span></td>
+          <td>${camp(r, ["usuaris_afectats", "usuarios_afectados", "afectats"], 0)}</td>
+        </tr>
+      `).join("");
+      document.getElementById("estat").textContent =
+        `Mostrant ${mostra.length} de ${dades.length} incidències disponibles.`;
+    }
+
+    async function carregarDades() {
+      try {
+        const res = await fetch("data/incidencies_netes.json");
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const json = await res.json();
+        registres = Array.isArray(json) ? json : (json.incidencies || json.dades || Object.values(json)[0] || []);
+
+        const total = registres.length;
+        const afectats = registres.reduce((acc, r) => acc + (Number(camp(r, ["usuaris_afectats", "usuarios_afectados", "afectats"], 0)) || 0), 0);
+        const [topCat, topCatN] = topFrequencia(registres.map(r => camp(r, ["categoria", "categoria_de_lavaria"])));
+        const [topDep, topDepN] = topFrequencia(registres.map(r => camp(r, ["departament", "departamento"])));
+
+        document.getElementById("kpi-total").textContent = total;
+        document.getElementById("kpi-afectats").textContent = afectats;
+        document.getElementById("kpi-mitjana").textContent = `Mitjana: ${total ? (afectats / total).toFixed(2) : 0} per incidència`;
+        document.getElementById("kpi-cat").textContent = topCat;
+        document.getElementById("kpi-cat-sub").textContent = `${topCatN} incidències (${total ? ((topCatN / total) * 100).toFixed(1) : 0}%)`;
+        document.getElementById("kpi-dep").textContent = topDep;
+        document.getElementById("kpi-dep-sub").textContent = `${topDepN} incidències (${total ? ((topDepN / total) * 100).toFixed(1) : 0}%)`;
+
+        renderTaula(registres);
+      } catch (err) {
+        document.getElementById("estat").textContent =
+          "No s'ha pogut carregar 'data/incidencies_netes.json'.";
+      }
+    }
+
+    document.getElementById("cercador").addEventListener("input", (e) => {
+      const q = e.target.value.toLowerCase().trim();
+      if (!q) return renderTaula(registres);
+      const filtrats = registres.filter(r => JSON.stringify(r).toLowerCase().includes(q));
+      renderTaula(filtrats);
+    });
+
+    carregarDades();
+  </script>
 </body>
 </html>
