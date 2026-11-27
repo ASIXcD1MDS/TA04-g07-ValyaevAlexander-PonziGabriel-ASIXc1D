@@ -898,8 +898,78 @@ def localizar_xml():
 # ----------------------------------------------------------------------------
 # MENÚ INTERACTIVO
 # ----------------------------------------------------------------------------
+def generar_matriz_qr(url):
+    """Devuelve la matriz del QR (lista de listas de bool, True = módulo oscuro).
+    Requiere la librería 'qrcode':  pip install qrcode"""
+    import qrcode  # import perezoso: el resto del programa funciona sin ella
+    qr = qrcode.QRCode(
+        error_correction=qrcode.constants.ERROR_CORRECT_L,
+        border=0,
+    )
+    qr.add_data(url)
+    qr.make(fit=True)
+    return qr.get_matrix()
+
+
+def renderizar_qr(matriz, borde=2):
+    """Convierte la matriz en líneas de texto usando medios bloques (▀ ▄ █).
+    Cada carácter equivale a 2 filas del QR, así queda cuadrado en consola.
+    Se pinta negro sobre fondo blanco (con zona de silencio) para que sea
+    legible también en terminales con tema oscuro."""
+    n = len(matriz)
+    total = n + 2 * borde
+    # Matriz con borde blanco (False = claro)
+    g = [[False] * total for _ in range(total)]
+    for y in range(n):
+        for x in range(n):
+            g[y + borde][x + borde] = bool(matriz[y][x])
+    if total % 2:                      # número par de filas para emparejar
+        g.append([False] * total)
+
+    lineas = []
+    for y in range(0, len(g), 2):
+        fila = ""
+        for x in range(total):
+            arriba, abajo = g[y][x], g[y + 1][x]
+            if arriba and abajo:
+                fila += "█"
+            elif arriba:
+                fila += "▀"
+            elif abajo:
+                fila += "▄"
+            else:
+                fila += " "
+        lineas.append(f"\033[30;107m{fila}{RESET}")
+    return lineas
+
+
+def mostrar_qr(url=URL_WEB):
+    """Muestra en consola el código QR de la web del proyecto."""
+    try:
+        matriz = generar_matriz_qr(url)
+    except ImportError:
+        print(f"\n  {AMARILLO}[!] Falta la librería 'qrcode'. Instálala con:{RESET}")
+        print(f"      {BLANCO}pip install qrcode{RESET}")
+        print(f"  {GRIS}    (o: python -m pip install qrcode){RESET}")
+        return
+    except Exception as err:
+        print(f"\n  {ROJO}[-] No se pudo generar el QR: {err}{RESET}")
+        return
+
+    lineas = renderizar_qr(matriz)
+    print(f"\n  {NEGRITA}{CIAN}CÓDIGO QR DE LA WEB DEL PROYECTO{RESET}\n")
+    for ln in lineas:
+        print(f"      {ln}")
+    print(f"\n  {GRIS}Escanéalo con el móvil  ->  {url}{RESET}")
+
+
+def abrir_qr(*_):
+    """Opción de menú: solo muestra el QR."""
+    mostrar_qr()
+
+
 def abrir_web(*_):
-    """Abre la web del proyecto en el navegador."""
+    """Abre la web del proyecto en el navegador y muestra su QR."""
     print(f"\n  {CIAN}[>] Abriendo la web del proyecto...{RESET}")
     print(f"  {GRIS}    {URL_WEB}{RESET}")
     try:
@@ -910,6 +980,7 @@ def abrir_web(*_):
         print(f"  {VERDE}[✔] Web abierta en tu navegador.{RESET}")
     else:
         print(f"  {AMARILLO}[!] No se pudo abrir el navegador. Copia el enlace de arriba.{RESET}")
+    mostrar_qr()
 
 
 def dibujar_menu(estado, ruta_xml):
@@ -967,7 +1038,8 @@ OPCIONES = [
     ("9", AZUL,     "Evolución mensual",         "Tendencia por mes",                   sec_mensual),
     ("10", MAGENTA, "Técnicos",                  "Carga de trabajo por técnico",        sec_tecnicos),
     ("11", GRIS,    "Recargar datos",            "Vuelve a leer el XML",                "RECARGAR"),
-    ("12", BLANCO,  "Abrir la web del proyecto", "Te lleva a la página en GitHub Pages", "WEB"),
+    ("12", CIAN,    "Código QR de la web",       "Escanéalo con el móvil",              "QR"),
+    ("13", BLANCO,  "Abrir la web del proyecto", "Te lleva a la página en GitHub Pages", "WEB"),
 ]
 
 
@@ -997,6 +1069,8 @@ def menu_interactivo(ruta_xml):
         limpiar_pantalla()
         if accion == "WEB":
             abrir_web()
+        elif accion == "QR":
+            abrir_qr()
         elif accion == "RECARGAR":
             recargar(estado, ruta_xml)
         elif estado["agg"] is None:
