@@ -1,19 +1,20 @@
-# 🛠️ IT Incident Pipeline: Google Forms → CSV → XML
+# 🛠️ IT Incident Pipeline: Google Forms → CSV → XML → JSON & Web Dashboard
  
 ![Python](https://img.shields.io/badge/Python-3.8%2B-3776AB?logo=python&logoColor=white)
 ![Google Forms](https://img.shields.io/badge/Google%20Forms-data%20source-7248B9?logo=googleforms&logoColor=white)
 ![Google Sheets](https://img.shields.io/badge/Google%20Sheets-CSV%20export-34A853?logo=googlesheets&logoColor=white)
-![XML](https://img.shields.io/badge/Output-XML-orange)
-![Status](https://img.shields.io/badge/status-academic%20project-blue)
+![XML](https://img.shields.io/badge/Output-XML%20%7C%20JSON-orange)
+![GitHub Pages](https://img.shields.io/badge/Web-GitHub%20Pages-222222?logo=github&logoColor=white)
+![Status](https://img.shields.io/badge/status-completed-brightgreen)
  
 > **TA04 – Group 07** · MDS (Programming and Markup Languages) · ASIX c1D
 > Authors: **Alexander Valyaev** & **Gabriel Ponzi**
  
-A small, end-to-end data pipeline that collects IT incident reports through **Google Forms**, exports them from **Google Sheets** as CSV, transforms them into a clean, well-structured **XML** document, analyses the data to turn it into meaningful **information**, and finally stores the results as **JSON**.
+An end-to-end data pipeline that collects IT incident reports through **Google Forms**, exports them from **Google Sheets** as CSV, transforms them into a clean, well-structured **XML** document, analyses and sanitises the data to turn it into meaningful **information**, stores the cleaned dataset as **JSON** and **CSV**, and publishes an interactive, mobile-responsive **Web Dashboard** via **GitHub Pages**.
  
 The project works with the *big three* data-interchange formats — **CSV, XML and JSON** — which are open, documented, Unicode-based and widely used, making them a sustainable choice for long-term data storage and reuse.
  
-The project also includes a **synthetic data generator** that floods the forms with realistic (and deliberately *chaotic*) responses, so the conversion step can be stress-tested against multilingual text, unusual Unicode, encoded values and characters that commonly break CSV/XML parsers.
+The project also includes a **synthetic data generator** (`src/forms.py`) that floods the forms with realistic (and deliberately *chaotic*) responses, so the conversion and cleaning steps can be stress-tested against multilingual text, unusual Unicode, encoded values (Base64, hexadecimal, octal, HTML entities, Zalgo, homoglyphs) and characters that commonly break CSV/XML parsers.
  
 ---
  
@@ -21,14 +22,15 @@ The project also includes a **synthetic data generator** that floods the forms w
  
 - [How It Works](#-how-it-works)
 - [Repository Structure](#-repository-structure)
-- [Requirements](#-requirements)
+- [Requirements & Automated Setup](#-requirements--automated-setup)
 - [Quick Start](#-quick-start)
 - [Scripts in Detail](#-scripts-in-detail)
-  - [forms.py — Synthetic response generator](#1-formspy--synthetic-response-generator)
-  - [descargar_csv.py — CSV downloader](#2-descargar_csvpy--csv-downloader)
-  - [csv_to_xml.py — CSV to XML converter](#3-csv_to_xmlpy--csv-to-xml-converter)
-  - [Data processing & statistics](#4-data-processing--statistics)
-  - [JSON storage](#5-json-storage)
+  - [src/forms.py — Synthetic response generator](#1-srcformspy--synthetic-response-generator)
+  - [src/descargar_csv.py — CSV downloader](#2-srcdescargar_csvpy--csv-downloader)
+  - [src/csv_to_xml.py — CSV to XML converter](#3-srccsv_to_xmlpy--csv-to-xml-converter)
+  - [src/procesar_xml.py — Interactive terminal dashboard & QR](#4-srcprocesar_xmlpy--interactive-terminal-dashboard--qr)
+  - [src/incidencies.py — Data cleaning, JSON/CSV export & Web generator](#5-srcincidenciespy--data-cleaning-jsoncsv-export--web-generator)
+- [Web Dashboard & GitHub Pages](#-web-dashboard--github-pages)
 - [Data Model](#-data-model)
 - [XML Tree Diagram](#-xml-tree-diagram)
 - [XML Output Example](#-xml-output-example)
@@ -42,53 +44,74 @@ The project also includes a **synthetic data generator** that floods the forms w
  
 ```mermaid
 flowchart LR
-    A[forms.py<br/>synthetic responses] -->|HTTP POST| B[Google Forms]
+    A[src/forms.py<br/>synthetic responses] -->|HTTP POST| B[Google Forms]
     U[Real users] --> B
     B --> C[Google Sheets<br/>response sheet]
-    C -->|descargar_csv.py<br/>CSV export| D[incidencies.csv]
-    D -->|csv_to_xml.py| E[incidencies.xml]
-    E -->|processing script| F[Statistics<br/>in the terminal]
-    E -->|processing script| G[incidencies.json]
+    C -->|src/descargar_csv.py<br/>CSV export| D[data/incidencies.csv]
+    D -->|src/csv_to_xml.py| E[data/incidencies.xml]
+    E -->|src/procesar_xml.py| F[Interactive Terminal<br/>Dashboard & QR]
+    E -->|src/incidencies.py| G[data/incidencies_netes.json<br/>& data/incidencies_netes.csv]
+    G -->|src/incidencies.py| H[web/index.html<br/>GitHub Pages]
 ```
  
-1. **Collect** — Incidents are submitted to a Google Form, either by real users or automatically by `forms.py`.
+1. **Collect** — Incidents are submitted to a Google Form, either by real users or automatically by `src/forms.py`.
 2. **Store** — Google Forms stores every response in a linked Google Sheet.
-3. **Export** — `descargar_csv.py` downloads the sheet as `incidencies.csv`.
-4. **Transform** — `csv_to_xml.py` parses the CSV and writes a pretty-printed `incidencies.xml`.
-5. **Analyse** — a Python console program reads the XML, filters out invalid data and shows formatted statistics.
-6. **Store** — the processed information is saved to `incidencies.json`, overwriting it or appending only new incidents.
+3. **Export** — `src/descargar_csv.py` downloads the sheet as `data/incidencies.csv`.
+4. **Transform** — `src/csv_to_xml.py` parses the CSV and writes a pretty-printed `data/incidencies.xml`.
+5. **Analyse & Sanitise** — `src/procesar_xml.py` and `src/incidencies.py` read the XML in streaming mode (`iterparse`), decode obfuscated text, filter out invalid records and display interactive statistics in the terminal.
+6. **Store & Publish** — Clean records are saved to `data/incidencies_netes.json` and `data/incidencies_netes.csv`, and rendered into a responsive web report (`web/index.html` / `web/informe.html`) deployed automatically to GitHub Pages.
 ---
  
 ## 📂 Repository Structure
  
-| File | Description |
+| Path | Description |
 |------|-------------|
-| `forms.py` | Generates and submits fake incident reports to one or more Google Forms, with an optional "chaos" mode for robustness testing. |
-| `descargar_csv.py` | Downloads the Google Sheets response sheet as a CSV file. |
-| `csv_to_xml.py` | Converts `incidencies.csv` into a structured, indented `incidencies.xml`. |
-| `incidencies.csv` | Latest export of the incident responses (raw data). |
-| `incidencies.xml` | Generated XML document (≈1,250 incidents at the time of writing). |
-| `processar_incidencies.py` | Reads the XML, cleans the data, displays statistics and saves `incidencies.json`. |
-| `incidencies.json` | Processed incidents stored in JSON format. |
-| `.gitignore` | Excludes local artefacts such as `logform.log`. |
+| `src/forms.py` | Generates and submits fake incident reports to one or more Google Forms, with an optional "chaos" mode for robustness testing. |
+| `src/descargar_csv.py` | Downloads the Google Sheets response sheet as `data/incidencies.csv`. |
+| `src/csv_to_xml.py` | Converts `data/incidencies.csv` into a structured, indented `data/incidencies.xml`. |
+| `src/procesar_xml.py` | Interactive console dashboard with ANSI tables, bar charts, text de-obfuscation, web launcher and terminal QR code generator. |
+| `src/incidencies.py` | Full data-cleaning pipeline that exports `data/incidencies_netes.json` and `data/incidencies_netes.csv` (with overwrite/append checks) and builds the HTML dashboard from `web/plantilla.html`. |
+| `data/incidencies.csv` | Latest export of the incident responses (raw data). |
+| `data/incidencies.xml` | Generated XML document (~1,250+ incidents). |
+| `data/incidencies_netes.json` | Cleaned and normalised incidents stored in JSON format. |
+| `data/incidencies_netes.csv` | Cleaned and normalised incidents stored in CSV format. |
+| `web/plantilla.html` | HTML/CSS/JS template used to generate the interactive web report. |
+| `web/index.html` | Main responsive web dashboard published on GitHub Pages. |
+| `web/informe.html` | Generated standalone HTML report copy. |
+| `startup.sh` | Automated setup script for Linux/macOS that checks Python, installs all dependencies from `requirements.txt` and verifies imports. |
+| `requirements.txt` | List of external Python packages required by the project (`requests`, `faker`, `qrcode`, `browser-cookie3`). |
+| `.github/workflows/deploy.yml` | GitHub Actions workflow that automatically deploys `web/` to GitHub Pages on every push to `main`. |
+| `.gitignore` | Excludes local artefacts such as `.venv/` and `logform.log`. |
  
 ---
  
-## 📋 Requirements
+## 📋 Requirements & Automated Setup
  
 - **Python 3.8+**
-- Python packages:
+- External packages listed in `requirements.txt`:
+  - `requests` (downloading CSV from Google Sheets and submitting forms)
+  - `faker` (multilingual synthetic data generation)
+  - `qrcode` (rendering the GitHub Pages QR code directly in the terminal)
+  - `browser-cookie3` *(optional, only if reusing a Chromium Google session in `src/forms.py`)*
+
+### Automatic installation (`startup.sh`)
+
+You can install and verify all dependencies at once using the included `startup.sh` script:
+
 ```bash
-pip install requests faker
+chmod +x startup.sh
+./startup.sh
+```
+
+*(If your system uses an externally managed Python environment, create and activate a virtual environment first: `python3 -m venv .venv && source .venv/bin/activate && ./startup.sh`.)*
+
+Alternatively, install manually via `pip`:
+
+```bash
+pip install -r requirements.txt
 ```
  
-Optional, only if you want `forms.py` to reuse your Chromium Google session:
- 
-```bash
-pip install browser_cookie3
-```
- 
-> `csv_to_xml.py` uses only the Python standard library (`csv`, `xml.etree.ElementTree`, `xml.dom.minidom`).
+> `src/csv_to_xml.py` and `src/incidencies.py` rely solely on the Python standard library (`csv`, `xml.etree.ElementTree`, `json`, `statistics`, `unicodedata`, `webbrowser`, etc.).
  
 ---
  
@@ -99,29 +122,33 @@ pip install browser_cookie3
 git clone https://github.com/ITB2627-PonziGabriel/TA04-g07-ValyaevAlexander-PonziGabriel-ASIXc1D.git
 cd TA04-g07-ValyaevAlexander-PonziGabriel-ASIXc1D
  
-# 2. Install dependencies
-pip install requests faker
+# 2. Set up environment and install dependencies
+python3 -m venv .venv && source .venv/bin/activate
+chmod +x startup.sh && ./startup.sh
  
-# 3. (Optional) Populate the form with test data
-python3 forms.py -n 100 <GOOGLE_FORM_URL>
+# 3. (Optional) Populate the form with synthetic test data
+python3 src/forms.py -n 100 <GOOGLE_FORM_URL>
  
 # 4. Download the latest responses as CSV
-python3 descargar_csv.py
+python3 src/descargar_csv.py
  
 # 5. Convert the CSV into XML
-python3 csv_to_xml.py
+python3 src/csv_to_xml.py
  
-# 6. Analyse the data and save it as JSON
-python3 processar_incidencies.py
+# 6. Clean data, export JSON/CSV and regenerate the web dashboard
+python3 src/incidencies.py
+ 
+# 7. Launch the interactive terminal dashboard (with QR code & web launcher)
+python3 src/procesar_xml.py
 ```
  
-After step 6 you will find an up-to-date `incidencies.xml` and `incidencies.json` in the project folder, and the statistics will have been printed to the terminal.
+After running steps 6 and 7, `data/incidencies_netes.json`, `data/incidencies_netes.csv`, and `web/index.html` will be up to date, and you can explore the statistics interactively in the terminal or scan the QR code on your mobile device.
  
 ---
  
 ## 🔍 Scripts in Detail
  
-### 1. `forms.py` — Synthetic response generator
+### 1. `src/forms.py` — Synthetic response generator
  
 Reads the structure of each Google Form (questions, options, validation rules, sections) directly from the public form page and submits **coherent fake answers** based on each question's title. For example, a question containing *"email"* receives an email address, *"inventari"* receives an inventory code like `INV-04213`, and *"descripció"* receives a realistic fault description.
  
@@ -134,15 +161,16 @@ Reads the structure of each Google Form (questions, options, validation rules, s
 - 💣 **Markup-breaking mode** — injects fragments that typically break XML, HTML, CSV, JSON, YAML, SQL, Markdown and template engines.
 - 🔁 **Resilient sending** — retries on network errors and HTTP 429 (rate limiting) with back-off.
 - 🔐 **Restricted forms** — can authenticate with a `cookies.txt` file or with your Chromium session.
+
 **Usage**
  
 ```bash
-python3 forms.py -n 250 URL1 URL2 URL3     # 250 responses per form
-python3 forms.py -n 250 -f urls.txt        # one URL per line in a file
-python3 forms.py --caos 0.5 URL            # 50 % "weird" answers
-python3 forms.py --caos 0 URL              # clean, normal answers only
-python3 forms.py --marques 0.2 URL         # 20 % markup-breaking answers
-python3 forms.py --dry-run URL             # inspect questions & sample answers, send nothing
+python3 src/forms.py -n 250 URL1 URL2 URL3     # 250 responses per form
+python3 src/forms.py -n 250 -f urls.txt        # one URL per line in a file
+python3 src/forms.py --caos 0.5 URL            # 50 % "weird" answers
+python3 src/forms.py --caos 0 URL              # clean, normal answers only
+python3 src/forms.py --marques 0.2 URL         # 20 % markup-breaking answers
+python3 src/forms.py --dry-run URL             # inspect questions & sample answers, send nothing
 ```
  
 **Options**
@@ -164,17 +192,17 @@ python3 forms.py --dry-run URL             # inspect questions & sample answers,
  
 ---
  
-### 2. `descargar_csv.py` — CSV downloader
+### 2. `src/descargar_csv.py` — CSV downloader
  
-Downloads the Google Sheet linked to the form using its public CSV export endpoint and saves it as `incidencies.csv`.
+Downloads the Google Sheet linked to the form using its public CSV export endpoint and saves it as `data/incidencies.csv`.
  
 ```bash
-python3 descargar_csv.py
+python3 src/descargar_csv.py
 ```
  
 To point it at a different sheet, replace `SHEET_ID` at the top of the script with the ID taken from your Google Sheets URL:
  
-```
+```text
 https://docs.google.com/spreadsheets/d/<SHEET_ID>/edit
 ```
  
@@ -182,12 +210,12 @@ https://docs.google.com/spreadsheets/d/<SHEET_ID>/edit
  
 ---
  
-### 3. `csv_to_xml.py` — CSV to XML converter
+### 3. `src/csv_to_xml.py` — CSV to XML converter
  
-Reads `incidencies.csv` and builds an XML tree where each row becomes an `<incidencia>` element with an incremental `id` attribute.
+Reads `data/incidencies.csv` and builds an XML tree where each row becomes an `<incidencia>` element with an incremental `id` attribute (`data/incidencies.xml`).
  
 ```bash
-python3 csv_to_xml.py
+python3 src/csv_to_xml.py
 ```
  
 **What it does**
@@ -198,41 +226,56 @@ python3 csv_to_xml.py
 - **Pretty-prints** the result with two-space indentation and UTF-8 encoding.
 ---
  
-### 4. Data processing & statistics
+### 4. `src/procesar_xml.py` — Interactive terminal dashboard & QR
  
-A Python console program reads `incidencies.xml` and turns raw **data** into useful **information**.
- 
-**Data cleaning** — before computing anything, records that carry no useful information or are clearly wrong are filtered out, for example:
- 
-- Dates that are impossible or out of range (e.g. an incident dated `0296` or `2064`).
-- Non-numeric or unrealistic values in numeric fields (e.g. `9999` affected users, values in binary/hex).
-- Empty, encoded or garbage text in key fields such as department or device type.
-**Statistics** — the cleaned data is summarised and printed with colours and aligned columns to make it easy to read, such as:
- 
-- Incidents per department, device type and fault category.
-- Locations with the most incidents.
-- Total and average number of affected users.
-- Incidents per technician.
-- Number of valid vs. discarded records.
+A console dashboard that reads `data/incidencies.xml` in streaming mode (`ET.iterparse`), automatically locates the dataset regardless of the working directory, and presents an **interactive menu** where the user can inspect individual statistical blocks:
+
+```bash
+python3 src/procesar_xml.py                 # automatically locates data/incidencies.xml
+python3 src/procesar_xml.py ruta/al.xml     # uses a custom XML path
+```
+
+**Data cleaning & de-obfuscation** — before computing metrics, corrupted or anomalous records are filtered out and obfuscated text is decoded:
+- Decodes Base64, hexadecimal byte strings, binary bitstrings, HTML entities (`&#...;`), Unicode escapes (`\u...`), Mojibake, Zalgo combining marks and homoglyphs.
+- Filters out impossible or out-of-range dates (e.g. `0296` or `2064`), non-numeric or unrealistic affected-user counts (`1..500`), empty/garbage mandatory fields and duplicate entries.
+
+**Interactive menu blocks** — statistics are organised into selectable sections with ANSI colours, Unicode box-drawing tables and horizontal bar charts, plus direct actions to **open the web dashboard in the browser** or **render a terminal QR code** pointing to the live GitHub Pages site.
+
 ---
  
-### 5. JSON storage
+### 5. `src/incidencies.py` — Data cleaning, JSON/CSV export & Web generator
  
-The processed incidents are saved to **`incidencies.json`**. Before writing, the program checks whether the file already exists:
+Processes `data/incidencies.xml`, exports the cleaned dataset to **`data/incidencies_netes.json`** and **`data/incidencies_netes.csv`**, and injects the processed data into `web/plantilla.html` to produce **`web/index.html`** and **`web/informe.html`**.
+
+```bash
+python3 src/incidencies.py
+```
+
+Before writing `data/incidencies_netes.json`, the program checks whether the file already exists:
  
 | Situation | Behaviour |
 |-----------|-----------|
-| File does **not** exist | It is created with all the incidents. |
+| File does **not** exist | It is created with all cleaned incidents. |
 | File exists → **Overwrite** | Previous content is deleted and all incidents are written again. |
 | File exists → **Append** | Existing incidents are kept and only **new** ones are added, avoiding duplicates (incidents with the same `id` are never repeated). |
  
 ```text
-The file 'incidencies.json' already exists. What do you want to do?
+The file 'data/incidencies_netes.json' already exists. What do you want to do?
   [1] Overwrite it
   [2] Append new incidents
 >
 ```
  
+---
+
+## 🌐 Web Dashboard & GitHub Pages
+
+The `web/` directory contains a responsive, self-contained HTML/CSS/JS dashboard (`web/index.html` and `web/informe.html`) designed with clean cards, KPI summaries, interactive filters, search and mobile adaptation.
+
+- **Automatic Deployment:** Every push to `main` triggers `.github/workflows/deploy.yml`, publishing `web/` to **GitHub Pages**:
+  `[https://itb2627-ponzigabriel.github.io/TA04-g07-ValyaevAlexander-PonziGabriel-ASIXc1D/](https://itb2627-ponzigabriel.github.io/TA04-g07-ValyaevAlexander-PonziGabriel-ASIXc1D/)`
+- **Mobile QR Access:** Both the interactive terminal menu (`src/procesar_xml.py`) and the web interface allow generating/scanning a QR code to open the dashboard directly on a smartphone.
+
 ---
  
 ## 🗂️ Data Model
@@ -314,7 +357,7 @@ graph TD
     "numero_dinventari": "N1",
     "categoria_de_lavaria": "No identificat",
     "descripcio_de_la_incidencia": "...",
-    "usuaris_afectats": "...",
+    "usuaris_afectats": 2,
     "contacte_del_tecnic_assignat": "..."
   }
 ]
@@ -326,11 +369,11 @@ graph TD
  
 | Stage | Task | Status |
 |-------|------|--------|
-| F1 | Incident form + CSV data collection | ✅ Done |
-| F2 | CSV → XML conversion + XML tree diagram | ✅ Done |
-| F3 | Display formatted information + statistics | 🚧 In progress |
-| F4 | Create JSON + file existence checks | 🚧 In progress |
-| F5 | Delivery + presentation | ⏳ Pending |
+| F1 | Incident form + CSV data collection (`src/forms.py`, `src/descargar_csv.py`) | ✅ Done |
+| F2 | CSV → XML conversion + XML tree diagram (`src/csv_to_xml.py`) | ✅ Done |
+| F3 | Interactive terminal statistics + data de-obfuscation (`src/procesar_xml.py`) | ✅ Done |
+| F4 | Clean JSON/CSV export with duplicate checks (`src/incidencies.py`) | ✅ Done |
+| F5 | Responsive Web Dashboard, QR code access & GitHub Pages deployment | ✅ Done |
  
 ---
  
@@ -338,9 +381,10 @@ graph TD
  
 | Script | Behaviour |
 |--------|-----------|
-| `forms.py` | Failed submissions (network errors, HTTP errors, login required) are appended to **`logform.log`** with a timestamp, the form URL and the payload sent. The log is excluded from Git via `.gitignore`. Progress is shown live in the terminal with ✓ / ✗ counters. |
-| `descargar_csv.py` | Reports the HTTP status code if the sheet cannot be downloaded (usually a sharing-permission issue). |
-| `csv_to_xml.py` | Warns if `incidencies.csv` is missing and reports any other conversion error without crashing. |
+| `src/forms.py` | Failed submissions (network errors, HTTP errors, login required) are appended to **`logform.log`** with a timestamp, the form URL and the payload sent. The log is excluded from Git via `.gitignore`. Progress is shown live in the terminal with ✓ / ✗ counters. |
+| `src/descargar_csv.py` | Reports the HTTP status code if the sheet cannot be downloaded (usually a sharing-permission issue). |
+| `src/csv_to_xml.py` | Warns if `data/incidencies.csv` is missing and reports any other conversion error without crashing. |
+| `src/procesar_xml.py` | Automatically searches `data/incidencies.xml` relative to the project root, handles missing `qrcode` gracefully with installation instructions and catches XML syntax errors cleanly. |
  
 ---
  
