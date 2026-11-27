@@ -1,0 +1,5 @@
+# Dependencias externas del proyecto TA04 - Gestión de Incidencias
+requests>=2.31.0
+faker>=20.0.0
+qrcode>=7.4.2
+browser-cookie3>=0.19.1
