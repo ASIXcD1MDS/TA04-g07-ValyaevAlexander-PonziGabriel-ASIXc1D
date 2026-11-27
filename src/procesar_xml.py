@@ -2,13 +2,24 @@
 # -*- coding: utf-8 -*-
 """
 ==============================================================================
-DASHBOARD DE ANÁLISIS DE INCIDENCIAS XML (ASIXc TA04 - Parte 3)
+DASHBOARD INTERACTIVO DE INCIDENCIAS XML (ASIXc TA04 - Parte 3)
 ==============================================================================
-Archivo: src/procesar_xml.py
-Descripción: Lee 'data/incidencies.xml' en streaming (iterparse), sanea texto
+Archivo : src/procesar_xml.py
+Estructura esperada del proyecto:
+
+    TA04-G07-.../
+    ├── data/   incidencies.xml, incidencies.csv, incidencies_netes.*
+    ├── src/    procesar_xml.py  (este archivo), csv_to_xml.py, ...
+    └── web/    index.html, informe.html, plantilla.html
+
+Uso:
+    python src/procesar_xml.py                 -> busca data/incidencies.xml
+    python src/procesar_xml.py ruta/al.xml     -> usa el XML indicado
+
+Descripción: Lee 'incidencies.xml' en streaming (iterparse), sanea texto
              ofuscado (Mojibake, octal, Zalgo, homóglifos, Base64, hex, HTML),
-             filtra registros erróneos y muestra un informe ejecutivo limpio
-             con tablas alineadas mediante cajas Unicode en la terminal.
+             filtra registros erróneos y ofrece un menú interactivo con
+             tablas y gráficos de barras en la terminal.
 ==============================================================================
 """
 
@@ -19,9 +30,26 @@ import re
 import statistics
 import sys
 import unicodedata
+import webbrowser
 import xml.etree.ElementTree as ET
 from collections import Counter, defaultdict
 from datetime import datetime
+from pathlib import Path
+
+# Activa los colores ANSI también en la consola de Windows (cmd / PowerShell)
+if os.name == "nt":
+    os.system("")
+
+# Fuerza UTF-8 en la salida para que las cajas Unicode se vean bien
+try:
+    sys.stdout.reconfigure(encoding="utf-8")
+except Exception:
+    pass
+
+# ----------------------------------------------------------------------------
+# CONSTANTES
+# ----------------------------------------------------------------------------
+URL_WEB = "https://asixcd1mds.github.io/TA04-g07-ValyaevAlexander-PonziGabriel-ASIXc1D/"
 
 # Códigos de color ANSI
 VERDE = "\033[92m"
@@ -114,6 +142,9 @@ MAPA_CAT = {
 }
 
 
+# ----------------------------------------------------------------------------
+# SANEAMIENTO DE TEXTO
+# ----------------------------------------------------------------------------
 def arreglar_mojibake(texto):
     """Repara UTF-8 mal interpretado como Latin-1/Windows-1252 (ej. AlimentaciÃ³)."""
     for enc in ("latin-1", "cp1252"):
@@ -313,6 +344,9 @@ def obtener_campo(elem, candidatos):
     return ""
 
 
+# ----------------------------------------------------------------------------
+# UTILIDADES DE PRESENTACIÓN
+# ----------------------------------------------------------------------------
 def ancho_visual(texto):
     """Calcula el ancho real en terminal teniendo en cuenta caracteres anchos."""
     w = 0
@@ -343,6 +377,44 @@ def ajustar_col(texto, ancho, alinear="izq"):
     return (s + " " * faltan) if alinear == "izq" else (" " * faltan + s)
 
 
+def barra_coloreada(valor, maximo, ancho, color):
+    """Construye una barra de progreso con ancho exacto sin romper bordes."""
+    if maximo <= 0 or valor <= 0:
+        return f"{GRIS}{'░' * ancho}{RESET}"
+    llenos = max(1, round((valor / maximo) * ancho))
+    llenos = min(llenos, ancho)
+    return f"{color}{'█' * llenos}{GRIS}{'░' * (ancho - llenos)}{RESET}"
+
+
+def titulo_seccion(num, texto):
+    """Imprime un encabezado de sección limpio y uniforme."""
+    print(f"\n  {NEGRITA}{CIAN}[{num}] {texto}{RESET}")
+
+
+def limpiar_pantalla():
+    os.system("cls" if os.name == "nt" else "clear")
+
+
+def pausa():
+    try:
+        input(f"\n  {GRIS}Pulsa ENTER para volver al menú...{RESET}")
+    except EOFError:
+        pass
+
+
+def banner(subtitulo=None):
+    """Cabecera principal del panel (81 chars)."""
+    borde_doble = "═" * (ANCHO_CAJA - 2)
+    print(f"\n  {CIAN}╔{borde_doble}╗{RESET}")
+    print(f"  {CIAN}║{RESET} {NEGRITA}{BLANCO}{ajustar_col('PANEL DE ANÁLISIS DE INCIDENCIAS TIC Y AUDIOVISUALES (ASIXc TA04)', ANCHO_CAJA - 4)}{RESET} {CIAN}║{RESET}")
+    if subtitulo:
+        print(f"  {CIAN}║{RESET} {GRIS}{ajustar_col(subtitulo, ANCHO_CAJA - 4)}{RESET} {CIAN}║{RESET}")
+    print(f"  {CIAN}╚{borde_doble}╝{RESET}")
+
+
+# ----------------------------------------------------------------------------
+# LECTURA Y PROCESADO DEL XML
+# ----------------------------------------------------------------------------
 def procesar_xml(ruta_xml):
     """Procesa el XML en streaming aplicando saneamiento, filtrado y deduplicación."""
     total_leidos = 0
@@ -385,6 +457,7 @@ def procesar_xml(ruta_xml):
 
             dt = parsear_fecha(data_raw)
             motiu = None
+            num_afectados = 0
 
             if dt is None:
                 motiu = "Fecha inválida o vacía"
@@ -457,6 +530,54 @@ def procesar_xml(ruta_xml):
     }
 
 
+def calcular_agregaciones(res):
+    """Calcula una sola vez todos los contadores que usan las secciones."""
+    validos = res["validos"]
+    agg = {
+        "afectados": [r["usuarios_afectados"] for r in validos],
+        "cat_cnt": Counter(), "cat_imp": defaultdict(int),
+        "eq_cnt": Counter(), "eq_imp": defaultdict(int),
+        "dep_cnt": Counter(), "dep_imp": defaultdict(int),
+        "ubic_cnt": Counter(), "ubic_imp": defaultdict(int),
+        "mes_cnt": Counter(), "mes_imp": defaultdict(int),
+        "tec_cnt": Counter(), "tec_imp": defaultdict(int),
+        "inv_cnt": Counter(),
+        "inv_eq": defaultdict(Counter), "inv_ub": defaultdict(Counter),
+        "inv_afe": defaultdict(int),
+        "sin_asignar": 0,
+    }
+    for r in validos:
+        af = r["usuarios_afectados"]
+        agg["cat_cnt"][r["categoria"]] += 1
+        agg["cat_imp"][r["categoria"]] += af
+        agg["eq_cnt"][r["tipo_equipo"]] += 1
+        agg["eq_imp"][r["tipo_equipo"]] += af
+        agg["dep_cnt"][r["departamento"]] += 1
+        agg["dep_imp"][r["departamento"]] += af
+        agg["ubic_cnt"][r["ubicacion"]] += 1
+        agg["ubic_imp"][r["ubicacion"]] += af
+        mes = r["fecha"].strftime("%Y-%m")
+        agg["mes_cnt"][mes] += 1
+        agg["mes_imp"][mes] += af
+
+        if es_inventario_valido_reincidencia(r["inventario"]):
+            inv = r["inventario"]
+            agg["inv_cnt"][inv] += 1
+            agg["inv_eq"][inv][r["tipo_equipo"]] += 1
+            agg["inv_ub"][inv][r["ubicacion"]] += 1
+            agg["inv_afe"][inv] += af
+
+        if r["tecnico"] == "Sin asignar":
+            agg["sin_asignar"] += 1
+        elif r["tecnico"] != "Contacto inválido / corrupto":
+            agg["tec_cnt"][r["tecnico"]] += 1
+            agg["tec_imp"][r["tecnico"]] += af
+    return agg
+
+
+# ----------------------------------------------------------------------------
+# SECCIONES DEL INFORME (cada una se puede mostrar por separado desde el menú)
+# ----------------------------------------------------------------------------
 def agrupar_items(contador, impacto, max_filas=9):
     """Agrupa las categorías minoritarias en 'Otros' si superan el máximo de filas."""
     ordenados = contador.most_common()
@@ -468,20 +589,6 @@ def agrupar_items(contador, impacto, max_filas=9):
     n_tipos = len(ordenados) - (max_filas - 1)
     top.append((f"Otros ({n_tipos} tipos)", resto_cnt, resto_imp))
     return top
-
-
-def barra_coloreada(valor, maximo, ancho, color):
-    """Construye una barra de progreso con ancho exacto sin romper bordes."""
-    if maximo <= 0 or valor <= 0:
-        return f"{GRIS}{'░' * ancho}{RESET}"
-    llenos = max(1, round((valor / maximo) * ancho))
-    llenos = min(llenos, ancho)
-    return f"{color}{'█' * llenos}{GRIS}{'░' * (ancho - llenos)}{RESET}"
-
-
-def titulo_seccion(num, texto):
-    """Imprime un encabezado de sección limpio y uniforme."""
-    print(f"\n  {NEGRITA}{CIAN}[{num}] {texto}{RESET}")
 
 
 def render_tabla_distribucion(titulo, num_sec, contador, impacto, total, color=CIAN, max_filas=9):
@@ -522,8 +629,7 @@ def render_tabla_distribucion(titulo, num_sec, contador, impacto, total, color=C
     print(f"  {GRIS}{b_bot}{RESET}")
 
 
-def mostrar_informe(res, nombre_archivo):
-    """Renderiza el dashboard completo en terminal."""
+def sec_auditoria(res, agg=None):
     total_leidos = res["total_leidos"]
     validos = res["validos"]
     descarte = res["motivos_descarte"]
@@ -533,15 +639,6 @@ def mostrar_informe(res, nombre_archivo):
     pct_val = (t_validos / total_leidos * 100) if total_leidos else 0
     pct_san = (res["saneados"] / t_validos * 100) if t_validos else 0
 
-    # --- BANNER PRINCIPAL (81 chars) ---
-    borde_doble = "═" * (ANCHO_CAJA - 2)
-    print(f"\n  {CIAN}╔{borde_doble}╗{RESET}")
-    print(f"  {CIAN}║{RESET} {NEGRITA}{BLANCO}{ajustar_col('PANEL DE ANÁLISIS DE INCIDENCIAS TIC Y AUDIOVISUALES (ASIXc TA04)', ANCHO_CAJA - 4)}{RESET} {CIAN}║{RESET}")
-    sub = f"Fuente: {nombre_archivo}   |   Fecha informe: {HOY.strftime('%d/%m/%Y %H:%M')}"
-    print(f"  {CIAN}║{RESET} {GRIS}{ajustar_col(sub, ANCHO_CAJA - 4)}{RESET} {CIAN}║{RESET}")
-    print(f"  {CIAN}╚{borde_doble}╝{RESET}")
-
-    # --- SECCIÓN 1: AUDITORÍA DE CALIDAD (2 paneles de 39 + 1 + 39 = 79) ---
     titulo_seccion(1, "AUDITORÍA DE CALIDAD Y LIMPIEZA DE DATOS")
     print(f"  {GRIS}┌{'─'*39}┬{'─'*39}┐{RESET}")
     print(
@@ -555,28 +652,23 @@ def mostrar_informe(res, nombre_archivo):
         ("Válidos para análisis", f"{t_validos} ({pct_val:.1f}%)", VERDE),
         ("Saneados/decodificados", f"{res['saneados']} ({pct_san:.1f}%)", CIAN),
         ("Descartados (inválidos)", f"{t_descarte}", ROJO),
-        ("Contactos téc. corruptos", f"{res['tecnicos_corruptos']} (aislados)", AMARILLO),
+        ("Téc. corruptos aislados", f"{res['tecnicos_corruptos']}", AMARILLO),
     ]
-    col_der = [
-        (m, f"{q}", ROJO) for m, q in descarte.most_common(5)
-    ]
+    col_der = [(m, f"{q}", ROJO) for m, q in descarte.most_common(5)]
     if not col_der:
         col_der = [("Sin registros descartados", "0", VERDE)]
 
-    n_filas = max(len(col_izq), len(col_der))
-    for i in range(n_filas):
+    for i in range(max(len(col_izq), len(col_der))):
         if i < len(col_izq):
             lbl, val, col = col_izq[i]
             txt_i = f"{ajustar_col(lbl + ':', 25)} {col}{ajustar_col(val, 11, 'der')}{RESET}"
         else:
             txt_i = " " * 37
-
         if i < len(col_der):
             lbl_d, val_d, col_d = col_der[i]
             txt_d = f"{ajustar_col(lbl_d, 30)} {col_d}{ajustar_col(val_d, 6, 'der')}{RESET}"
         else:
             txt_d = " " * 37
-
         print(f"  {GRIS}│{RESET} {txt_i} {GRIS}│{RESET} {txt_d} {GRIS}│{RESET}")
     print(f"  {GRIS}└{'─'*39}┴{'─'*39}┘{RESET}")
 
@@ -585,76 +677,51 @@ def mostrar_informe(res, nombre_archivo):
             f"#{id_r} ({d}: {m})" for id_r, m, d in ejemplos[:3]
         ) + RESET)
 
-    if t_validos == 0:
-        print(f"\n  {ROJO}[!] No hay registros válidos para analizar.{RESET}\n")
-        return
 
-    # --- CÁLCULO DE AGREGACIONES ---
-    afectados = [r["usuarios_afectados"] for r in validos]
-    cat_cnt, cat_imp = Counter(), defaultdict(int)
-    eq_cnt, eq_imp = Counter(), defaultdict(int)
-    dep_cnt, dep_imp = Counter(), defaultdict(int)
-    ubic_cnt, ubic_imp = Counter(), defaultdict(int)
-    mes_cnt, mes_imp = Counter(), defaultdict(int)
-    tec_cnt, tec_imp = Counter(), defaultdict(int)
-    inv_cnt = Counter()
-    inv_eq, inv_ub = defaultdict(Counter), defaultdict(Counter)
-
-    sin_asignar = 0
-    for r in validos:
-        af = r["usuarios_afectados"]
-        cat_cnt[r["categoria"]] += 1
-        cat_imp[r["categoria"]] += af
-        eq_cnt[r["tipo_equipo"]] += 1
-        eq_imp[r["tipo_equipo"]] += af
-        dep_cnt[r["departamento"]] += 1
-        dep_imp[r["departamento"]] += af
-        ubic_cnt[r["ubicacion"]] += 1
-        ubic_imp[r["ubicacion"]] += af
-        mes = r["fecha"].strftime("%Y-%m")
-        mes_cnt[mes] += 1
-        mes_imp[mes] += af
-
-        if es_inventario_valido_reincidencia(r["inventario"]):
-            inv_cnt[r["inventario"]] += 1
-            inv_eq[r["inventario"]][r["tipo_equipo"]] += 1
-            inv_ub[r["inventario"]][r["ubicacion"]] += 1
-
-        if r["tecnico"] == "Sin asignar":
-            sin_asignar += 1
-        elif r["tecnico"] != "Contacto inválido / corrupto":
-            tec_cnt[r["tecnico"]] += 1
-            tec_imp[r["tecnico"]] += af
-
-    # --- SECCIÓN 2: INDICADORES CLAVE (KPIs) ---
-    top_cat, top_cat_n = cat_cnt.most_common(1)[0]
-    top_eq, top_eq_n = eq_cnt.most_common(1)[0]
-    top_dep, top_dep_n = dep_cnt.most_common(1)[0]
+def sec_kpis(res, agg):
+    validos = res["validos"]
+    t_validos = len(validos)
+    afectados = agg["afectados"]
+    top_cat, top_cat_n = agg["cat_cnt"].most_common(1)[0]
+    top_eq, top_eq_n = agg["eq_cnt"].most_common(1)[0]
+    top_dep, top_dep_n = agg["dep_cnt"].most_common(1)[0]
 
     titulo_seccion(2, "RESUMEN EJECUTIVO DE IMPACTO (KPIs)")
     print(f"  {GRIS}┌{'─'*39}┬{'─'*39}┐{RESET}")
     kpis_izq = [
-        ("Total usuarios afectados", f"{sum(afectados)} pers."),
+        ("Usuarios afectados", f"{sum(afectados)} pers."),
         ("Media por incidencia", f"{statistics.mean(afectados):.2f} pers."),
         ("Mediana | Rango", f"{statistics.median(afectados):.1f} | [{min(afectados)}..{max(afectados)}]")
     ]
     kpis_der = [
         ("Avería principal", f"{top_cat} ({top_cat_n/t_validos*100:.1f}%)"),
-        ("Equipo más crítico", f"{top_eq} ({top_eq_n/t_validos*100:.1f}%)"),
-        ("Depto. más afectado", f"{top_dep} ({top_dep_n/t_validos*100:.1f}%)")
+        ("Equipo crítico", f"{top_eq} ({top_eq_n/t_validos*100:.1f}%)"),
+        ("Depto. afectado", f"{top_dep} ({top_dep_n/t_validos*100:.1f}%)")
     ]
     for (li, vi), (ld, vd) in zip(kpis_izq, kpis_der):
         t_i = f"{ajustar_col(li + ':', 24)} {VERDE}{ajustar_col(vi, 12, 'der')}{RESET}"
-        t_d = f"{ajustar_col(ld + ':', 20)} {CIAN}{ajustar_col(vd, 16, 'der')}{RESET}"
+        t_d = f"{ajustar_col(ld + ':', 17)} {CIAN}{ajustar_col(vd, 19, 'der')}{RESET}"
         print(f"  {GRIS}│{RESET} {t_i} {GRIS}│{RESET} {t_d} {GRIS}│{RESET}")
     print(f"  {GRIS}└{'─'*39}┴{'─'*39}┘{RESET}")
 
-    # --- SECCIONES 3, 4 y 5: TABLAS DE DISTRIBUCIÓN ---
-    render_tabla_distribucion("DISTRIBUCIÓN POR CATEGORÍA DE AVERÍA", 3, cat_cnt, cat_imp, t_validos, color=VERDE)
-    render_tabla_distribucion("DISTRIBUCIÓN POR TIPO DE EQUIPO", 4, eq_cnt, eq_imp, t_validos, color=CIAN)
-    render_tabla_distribucion("INCIDENCIAS POR DEPARTAMENTO", 5, dep_cnt, dep_imp, t_validos, color=MAGENTA)
 
-    # --- SECCIÓN 6: TOP 5 UBICACIONES CRÍTICAS (81 chars) ---
+def sec_categorias(res, agg):
+    render_tabla_distribucion("DISTRIBUCIÓN POR CATEGORÍA DE AVERÍA", 3,
+                              agg["cat_cnt"], agg["cat_imp"], len(res["validos"]), color=VERDE)
+
+
+def sec_equipos(res, agg):
+    render_tabla_distribucion("DISTRIBUCIÓN POR TIPO DE EQUIPO", 4,
+                              agg["eq_cnt"], agg["eq_imp"], len(res["validos"]), color=CIAN)
+
+
+def sec_departamentos(res, agg):
+    render_tabla_distribucion("INCIDENCIAS POR DEPARTAMENTO", 5,
+                              agg["dep_cnt"], agg["dep_imp"], len(res["validos"]), color=MAGENTA)
+
+
+def sec_ubicaciones(res, agg):
+    t_validos = len(res["validos"])
     W_RK, W_UB, W_NU, W_PC, W_BR, W_AF = 2, 25, 7, 7, 14, 7
     titulo_seccion(6, "TOP 5 UBICACIONES CON MÁS INCIDENCIAS")
     print(f"  {GRIS}┌{'─'*(W_RK+2)}┬{'─'*(W_UB+2)}┬{'─'*(W_NU+2)}┬{'─'*(W_PC+2)}┬{'─'*(W_BR+2)}┬{'─'*(W_AF+2)}┐{RESET}")
@@ -667,7 +734,7 @@ def mostrar_informe(res, nombre_archivo):
         f"{GRIS}│{RESET} {NEGRITA}{ajustar_col('Afect.', W_AF, 'der')}{RESET} {GRIS}│{RESET}"
     )
     print(f"  {GRIS}├{'─'*(W_RK+2)}┼{'─'*(W_UB+2)}┼{'─'*(W_NU+2)}┼{'─'*(W_PC+2)}┼{'─'*(W_BR+2)}┼{'─'*(W_AF+2)}┤{RESET}")
-    top_ub = ubic_cnt.most_common(5)
+    top_ub = agg["ubic_cnt"].most_common(5)
     max_ub = top_ub[0][1] if top_ub else 1
     for idx, (ub, cnt) in enumerate(top_ub, start=1):
         pct = cnt / t_validos * 100
@@ -678,12 +745,13 @@ def mostrar_informe(res, nombre_archivo):
             f"{GRIS}│{RESET} {ajustar_col(cnt, W_NU, 'der')} "
             f"{GRIS}│{RESET} {ajustar_col(f'{pct:.1f}%', W_PC, 'der')} "
             f"{GRIS}│{RESET} {bar} "
-            f"{GRIS}│{RESET} {ajustar_col(ubic_imp[ub], W_AF, 'der')} {GRIS}│{RESET}"
+            f"{GRIS}│{RESET} {ajustar_col(agg['ubic_imp'][ub], W_AF, 'der')} {GRIS}│{RESET}"
         )
     print(f"  {GRIS}└{'─'*(W_RK+2)}┴{'─'*(W_UB+2)}┴{'─'*(W_NU+2)}┴{'─'*(W_PC+2)}┴{'─'*(W_BR+2)}┴{'─'*(W_AF+2)}┘{RESET}")
 
-    # --- SECCIÓN 7: TOP 5 EQUIPOS REINCIDENTES (81 chars) ---
-    reincidentes = [(cod, q) for cod, q in inv_cnt.most_common(5) if q > 1]
+
+def sec_reincidentes(res, agg):
+    reincidentes = [(cod, q) for cod, q in agg["inv_cnt"].most_common(5) if q > 1]
     titulo_seccion(7, "EQUIPOS REINCIDENTES (INVENTARIOS CON > 1 INCIDENCIA)")
     W_COD, W_TEQ, W_UBH, W_INC, W_AFP = 14, 17, 22, 6, 6
     print(f"  {GRIS}┌{'─'*(W_COD+2)}┬{'─'*(W_TEQ+2)}┬{'─'*(W_UBH+2)}┬{'─'*(W_INC+2)}┬{'─'*(W_AFP+2)}┐{RESET}")
@@ -697,23 +765,23 @@ def mostrar_informe(res, nombre_archivo):
     print(f"  {GRIS}├{'─'*(W_COD+2)}┼{'─'*(W_TEQ+2)}┼{'─'*(W_UBH+2)}┼{'─'*(W_INC+2)}┼{'─'*(W_AFP+2)}┤{RESET}")
     if reincidentes:
         for cod, q in reincidentes:
-            eq_p = inv_eq[cod].most_common(1)[0][0]
-            ub_p = inv_ub[cod].most_common(1)[0][0]
-            afe_t = sum(
-                r["usuarios_afectados"] for r in validos if r["inventario"] == cod
-            )
+            eq_p = agg["inv_eq"][cod].most_common(1)[0][0]
+            ub_p = agg["inv_ub"][cod].most_common(1)[0][0]
             print(
                 f"  {GRIS}│{RESET} {ROJO}{ajustar_col(cod, W_COD)}{RESET} "
                 f"{GRIS}│{RESET} {ajustar_col(eq_p, W_TEQ)} "
                 f"{GRIS}│{RESET} {ajustar_col(ub_p, W_UBH)} "
                 f"{GRIS}│{RESET} {ROJO}{ajustar_col(q, W_INC, 'der')}{RESET} "
-                f"{GRIS}│{RESET} {ajustar_col(afe_t, W_AFP, 'der')} {GRIS}│{RESET}"
+                f"{GRIS}│{RESET} {ajustar_col(agg['inv_afe'][cod], W_AFP, 'der')} {GRIS}│{RESET}"
             )
     else:
         print(f"  {GRIS}│{RESET} {GRIS}{ajustar_col('No se han detectado códigos de inventario reincidentes.', ANCHO_CAJA - 4)}{RESET} {GRIS}│{RESET}")
     print(f"  {GRIS}└{'─'*(W_COD+2)}┴{'─'*(W_TEQ+2)}┴{'─'*(W_UBH+2)}┴{'─'*(W_INC+2)}┴{'─'*(W_AFP+2)}┘{RESET}")
 
-    # --- SECCIÓN 8: EVOLUCIÓN MENSUAL (81 chars) ---
+
+def sec_mensual(res, agg):
+    t_validos = len(res["validos"])
+    mes_cnt, mes_imp = agg["mes_cnt"], agg["mes_imp"]
     W_MS, W_MI, W_MP, W_MB, W_MA = 10, 7, 7, 33, 8
     titulo_seccion(8, "EVOLUCIÓN MENSUAL DE INCIDENCIAS")
     print(f"  {GRIS}┌{'─'*(W_MS+2)}┬{'─'*(W_MI+2)}┬{'─'*(W_MP+2)}┬{'─'*(W_MB+2)}┬{'─'*(W_MA+2)}┐{RESET}")
@@ -738,7 +806,9 @@ def mostrar_informe(res, nombre_archivo):
         )
     print(f"  {GRIS}└{'─'*(W_MS+2)}┴{'─'*(W_MI+2)}┴{'─'*(W_MP+2)}┴{'─'*(W_MB+2)}┴{'─'*(W_MA+2)}┘{RESET}")
 
-    # --- SECCIÓN 9: GESTIÓN DE TÉCNICOS (TOP 5 VÁLIDOS) (81 chars) ---
+
+def sec_tecnicos(res, agg):
+    t_validos = len(res["validos"])
     W_TR, W_TN, W_TI, W_TP, W_TA = 2, 38, 7, 7, 11
     titulo_seccion(9, "TÉCNICOS CON MAYOR CARGA (CONTACTOS VÁLIDOS)")
     print(f"  {GRIS}┌{'─'*(W_TR+2)}┬{'─'*(W_TN+2)}┬{'─'*(W_TI+2)}┬{'─'*(W_TP+2)}┬{'─'*(W_TA+2)}┐{RESET}")
@@ -750,34 +820,204 @@ def mostrar_informe(res, nombre_archivo):
         f"{GRIS}│{RESET} {NEGRITA}{ajustar_col('Afectados', W_TA, 'der')}{RESET} {GRIS}│{RESET}"
     )
     print(f"  {GRIS}├{'─'*(W_TR+2)}┼{'─'*(W_TN+2)}┼{'─'*(W_TI+2)}┼{'─'*(W_TP+2)}┼{'─'*(W_TA+2)}┤{RESET}")
-    for idx, (nom, cnt) in enumerate(tec_cnt.most_common(5), start=1):
+    for idx, (nom, cnt) in enumerate(agg["tec_cnt"].most_common(5), start=1):
         pct = cnt / t_validos * 100
         print(
             f"  {GRIS}│{RESET} {ajustar_col(idx, W_TR, 'der')} "
             f"{GRIS}│{RESET} {ajustar_col(nom, W_TN)} "
             f"{GRIS}│{RESET} {ajustar_col(cnt, W_TI, 'der')} "
             f"{GRIS}│{RESET} {ajustar_col(f'{pct:.1f}%', W_TP, 'der')} "
-            f"{GRIS}│{RESET} {ajustar_col(tec_imp[nom], W_TA, 'der')} {GRIS}│{RESET}"
+            f"{GRIS}│{RESET} {ajustar_col(agg['tec_imp'][nom], W_TA, 'der')} {GRIS}│{RESET}"
         )
     print(f"  {GRIS}└{'─'*(W_TR+2)}┴{'─'*(W_TN+2)}┴{'─'*(W_TI+2)}┴{'─'*(W_TP+2)}┴{'─'*(W_TA+2)}┘{RESET}")
     print(
-        f"  {GRIS}  Estado de asignación -> Sin asignar: {AMARILLO}{sin_asignar}{GRIS} | "
-        f"Contactos corruptos/ilegibles filtrados: {ROJO}{res['tecnicos_corruptos']}{RESET}\n"
+        f"  {GRIS}  Estado de asignación -> Sin asignar: {AMARILLO}{agg['sin_asignar']}{GRIS} | "
+        f"Contactos corruptos/ilegibles filtrados: {ROJO}{res['tecnicos_corruptos']}{RESET}"
     )
 
 
-if __name__ == "__main__":
-    if len(sys.argv) > 1:
-        archivo_xml = sys.argv[1]
-    elif os.path.exists("data/incidencies.xml"):
-        archivo_xml = "data/incidencies.xml"
-    else:
-        archivo_xml = "data/Incidencies.xml"
+def informe_completo(res, agg):
+    sec_auditoria(res, agg)
+    sec_kpis(res, agg)
+    sec_categorias(res, agg)
+    sec_equipos(res, agg)
+    sec_departamentos(res, agg)
+    sec_ubicaciones(res, agg)
+    sec_reincidentes(res, agg)
+    sec_mensual(res, agg)
+    sec_tecnicos(res, agg)
 
+
+# ----------------------------------------------------------------------------
+# LOCALIZACIÓN DEL XML (según la estructura data/ + src/)
+# ----------------------------------------------------------------------------
+def localizar_xml():
+    """
+    Localiza incidencies.xml usando la ubicación de este script, no el
+    directorio actual de la terminal.
+
+    Prioridad:
+    1. Ruta indicada como argumento.
+    2. data/incidencies.xml en la raíz del proyecto (carpeta padre de src/).
+    3. incidencies.xml en la raíz del proyecto o junto al script.
+    """
+    carpeta_script = Path(__file__).resolve().parent
+    raiz_proyecto = carpeta_script.parent
+    carpeta_data = raiz_proyecto / "data"
+
+    if len(sys.argv) > 1:
+        ruta_argumento = Path(sys.argv[1]).expanduser()
+        if ruta_argumento.is_file():
+            return ruta_argumento.resolve()
+        desde_proyecto = raiz_proyecto / ruta_argumento
+        if desde_proyecto.is_file():
+            return desde_proyecto.resolve()
+        nombre = ruta_argumento.name
+        for candidato in (carpeta_data / nombre, raiz_proyecto / nombre, carpeta_script / nombre):
+            if candidato.is_file():
+                return candidato.resolve()
+        raise FileNotFoundError(f"No se encuentra la ruta indicada: {sys.argv[1]}")
+
+    nombres = ("incidencies.xml", "Incidencies.xml", "incidencias.xml", "Incidencias.xml")
+    candidatos = [carpeta_data / n for n in nombres]
+    candidatos += [raiz_proyecto / n for n in nombres]
+    candidatos += [carpeta_script / n for n in nombres]
+
+    for candidato in candidatos:
+        if candidato.is_file():
+            return candidato.resolve()
+
+    rutas_probadas = "\n".join(f"  - {ruta}" for ruta in candidatos[:4])
+    raise FileNotFoundError(
+        "No se ha encontrado el archivo XML. Rutas comprobadas:\n"
+        f"{rutas_probadas}\n"
+        "Comprueba que data/incidencies.xml existe o ejecuta primero csv_to_xml.py."
+    )
+
+
+# ----------------------------------------------------------------------------
+# MENÚ INTERACTIVO
+# ----------------------------------------------------------------------------
+def abrir_web(*_):
+    """Abre la web del proyecto en el navegador."""
+    print(f"\n  {CIAN}[>] Abriendo la web del proyecto...{RESET}")
+    print(f"  {GRIS}    {URL_WEB}{RESET}")
     try:
-        resultado = procesar_xml(archivo_xml)
-        mostrar_informe(resultado, archivo_xml)
-    except FileNotFoundError:
-        print(f"{ROJO}[-] Error: No se encontró '{archivo_xml}'. Ejecuta primero 'python3 src/csv_to_xml.py'.{RESET}")
+        ok = webbrowser.open(URL_WEB, new=2)
+    except Exception:
+        ok = False
+    if ok:
+        print(f"  {VERDE}[✔] Web abierta en tu navegador.{RESET}")
+    else:
+        print(f"  {AMARILLO}[!] No se pudo abrir el navegador. Copia el enlace de arriba.{RESET}")
+
+
+def dibujar_menu(estado, ruta_xml):
+    """Dibuja el menú principal con estilo de tarjeta."""
+    limpiar_pantalla()
+    res = estado["res"]
+    sub = f"Fuente: {os.path.basename(ruta_xml)}   |   Fecha: {HOY.strftime('%d/%m/%Y %H:%M')}"
+    banner(sub)
+
+    # Mini-resumen de estado
+    t_val = len(res["validos"])
+    pct = (t_val / res["total_leidos"] * 100) if res["total_leidos"] else 0
+    barra = barra_coloreada(t_val, res["total_leidos"], 20, VERDE)
+    print(
+        f"\n  {GRIS}Datos cargados:{RESET} {BLANCO}{res['total_leidos']}{RESET} leídos  "
+        f"{GRIS}|{RESET} {VERDE}{t_val}{RESET} válidos  "
+        f"{GRIS}|{RESET} {ROJO}{sum(res['motivos_descarte'].values())}{RESET} descartados   {barra} {pct:.0f}%"
+    )
+
+    ancho_int = ANCHO_CAJA - 2
+    print(f"\n  {GRIS}┌{'─' * ancho_int}┐{RESET}")
+    print(f"  {GRIS}│{RESET} {NEGRITA}{ajustar_col('MENÚ PRINCIPAL  -  elige una opción', ancho_int - 2)}{RESET} {GRIS}│{RESET}")
+    print(f"  {GRIS}├{'─' * ancho_int}┤{RESET}")
+    for clave, color, nombre, desc, _ in OPCIONES:
+        linea = (
+            f"{color}{NEGRITA}[{clave:>2}]{RESET} "
+            f"{BLANCO}{ajustar_col(nombre, 28)}{RESET} "
+            f"{GRIS}{ajustar_col(desc, 43)}{RESET}"
+        )
+        print(f"  {GRIS}│{RESET} {linea} {GRIS}│{RESET}")
+    print(f"  {GRIS}├{'─' * ancho_int}┤{RESET}")
+    salir = f"{ROJO}{NEGRITA}[ 0]{RESET} {BLANCO}{ajustar_col('Salir', 28)}{RESET} {GRIS}{ajustar_col('Cerrar el panel', 43)}{RESET}"
+    print(f"  {GRIS}│{RESET} {salir} {GRIS}│{RESET}")
+    print(f"  {GRIS}└{'─' * ancho_int}┘{RESET}")
+
+
+def recargar(estado, ruta_xml):
+    """Vuelve a leer y procesar el XML."""
+    print(f"\n  {CIAN}[i] Releyendo {ruta_xml.name}...{RESET}")
+    estado["res"] = procesar_xml(str(ruta_xml))
+    estado["agg"] = calcular_agregaciones(estado["res"]) if estado["res"]["validos"] else None
+    print(f"  {VERDE}[✔] Datos recargados: {len(estado['res']['validos'])} registros válidos.{RESET}")
+
+
+# (tecla, color, nombre, descripción, función)  -> la ÚLTIMA es la web
+OPCIONES = [
+    ("1", VERDE,    "Informe completo",          "Todas las secciones seguidas",        informe_completo),
+    ("2", CIAN,     "Auditoría de calidad",      "Leídos, válidos, descartados",        sec_auditoria),
+    ("3", AMARILLO, "Resumen ejecutivo (KPIs)",  "Total, media, mediana y rango",       sec_kpis),
+    ("4", VERDE,    "Categorías de avería",      "Hardware, Software, Xarxa...",        sec_categorias),
+    ("5", CIAN,     "Tipos de equipo",           "Ordinador, Impressora, Monitor...",   sec_equipos),
+    ("6", MAGENTA,  "Departamentos",             "Incidencias por departamento",        sec_departamentos),
+    ("7", AMARILLO, "Top ubicaciones",           "Aulas/salas con más problemas",       sec_ubicaciones),
+    ("8", ROJO,     "Equipos reincidentes",      "Inventarios con varias incidencias",  sec_reincidentes),
+    ("9", AZUL,     "Evolución mensual",         "Tendencia por mes",                   sec_mensual),
+    ("10", MAGENTA, "Técnicos",                  "Carga de trabajo por técnico",        sec_tecnicos),
+    ("11", GRIS,    "Recargar datos",            "Vuelve a leer el XML",                "RECARGAR"),
+    ("12", BLANCO,  "Abrir la web del proyecto", "Te lleva a la página en GitHub Pages", "WEB"),
+]
+
+
+def menu_interactivo(ruta_xml):
+    estado = {"res": procesar_xml(str(ruta_xml)), "agg": None}
+    if estado["res"]["validos"]:
+        estado["agg"] = calcular_agregaciones(estado["res"])
+    acciones = {clave: fn for clave, _, _, _, fn in OPCIONES}
+
+    while True:
+        dibujar_menu(estado, ruta_xml.name)
+        try:
+            eleccion = input(f"\n  {NEGRITA}{CIAN}Opción >{RESET} ").strip()
+        except (EOFError, KeyboardInterrupt):
+            eleccion = "0"
+
+        if eleccion in ("0", "q", "Q", "salir"):
+            print(f"\n  {VERDE}Hasta pronto 👋{RESET}\n")
+            break
+
+        accion = acciones.get(eleccion)
+        if accion is None:
+            print(f"\n  {ROJO}[!] Opción no válida. Elige un número del menú.{RESET}")
+            pausa()
+            continue
+
+        limpiar_pantalla()
+        if accion == "WEB":
+            abrir_web()
+        elif accion == "RECARGAR":
+            recargar(estado, ruta_xml)
+        elif estado["agg"] is None:
+            banner()
+            print(f"\n  {ROJO}[!] No hay registros válidos para analizar.{RESET}")
+            if eleccion == "2":  # la auditoría sí se puede ver sin datos válidos
+                accion(estado["res"], None)
+        else:
+            banner()
+            accion(estado["res"], estado["agg"])
+        pausa()
+
+
+if __name__ == "__main__":
+    try:
+        archivo_xml = localizar_xml()
+        print(f"{GRIS}[i] Leyendo XML: {archivo_xml}{RESET}")
+        menu_interactivo(archivo_xml)
+    except FileNotFoundError as err:
+        print(f"{ROJO}[-] Error: {err}{RESET}")
+        sys.exit(1)
     except ET.ParseError as err:
-        print(f"{ROJO}[-] Error de sintaxis en el XML '{archivo_xml}': {err}{RESET}")
+        print(f"{ROJO}[-] Error de sintaxis en el XML: {err}{RESET}")
+        sys.exit(1)
